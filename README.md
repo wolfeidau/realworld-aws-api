@@ -11,6 +11,14 @@ The main goal of this project is to illustrate how to build a maintainable real 
 * The ability to run the lambda service locally without the need for SAM, this is mainly to enable compile on change for local development
 * Logging with meta data including lambda request identifiers 
 
+# Conventions
+
+In this example I use a few conventions when deploying the software, this is done to support multiple environments, and branch based deploys which are common when building and testing.
+
+* `AppName` - Label given service(s) with some collective role in a system.
+* `Stage` - The stage where the application is running in, e.g., dev, prod.
+* `Branch` - The branch this release is deployed from, typically something other than `main` or `master` is only used when testing in parallel.
+
 # Deployment
 
 Create an `.envrc` using the `.envrc.example` and update it with your settings, this is used with [direnv](https://direnv.net/).
@@ -24,7 +32,6 @@ Run make to deploy the stack.
 ```
 make
 ```
-
 
 # Libraries
 

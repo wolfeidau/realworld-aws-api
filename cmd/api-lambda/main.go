@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 
@@ -8,10 +9,12 @@ import (
 	"github.com/apex/gateway"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	echolog "github.com/labstack/gommon/log"
 	"github.com/rs/zerolog/log"
 	lmw "github.com/wolfeidau/lambda-go-extras/middleware"
+	"github.com/wolfeidau/lambda-go-extras/middleware/raw"
 	zlog "github.com/wolfeidau/lambda-go-extras/middleware/zerolog"
 	"github.com/wolfeidau/realworld-aws-api/internal/app"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
@@ -29,7 +32,7 @@ func main() {
 	srv := server.NewCustomers(cfg)
 
 	// build a list of fields to include in all events
-	flds := lmw.FieldMap{"commit": app.Commit, "buildDate": app.BuildDate}
+	flds := lmw.FieldMap{"commit": app.Commit, "buildDate": app.BuildDate, "stage": cfg.Stage, "branch": cfg.Branch}
 
 	e := echo.New()
 
@@ -42,11 +45,25 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to loading swagger spec")
 	}
 
-	customersapi.RegisterHandlers(e, srv, middleware.OapiRequestValidator(swagger))
+	customersapi.RegisterHandlers(e, srv, middleware.OapiRequestValidatorWithOptions(swagger, &middleware.Options{
+		Options: openapi3filter.Options{
+			AuthenticationFunc: func(c context.Context, input *openapi3filter.AuthenticationInput) error {
+				return nil // don't validate authentication options and enforce them as we use APIGW to do this
+			},
+		},
+	}))
 
 	gw := gateway.NewGateway(e)
 
-	ch := lmw.New(zlog.New(zlog.Fields(flds))).Then(gw)
+	ch := lmw.New(
+		zlog.New(zlog.Fields(flds)), // build a logger and inject it into the context
+	)
 
-	lambda.StartHandler(ch)
+	if cfg.Stage == "dev" {
+		ch.Use(raw.New(raw.Fields(flds))) // raw event logger used during development
+	}
+
+	h := ch.Then(gw)
+
+	lambda.StartHandler(h)
 }
