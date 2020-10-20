@@ -1,0 +1,222 @@
+openapi: "3.0.2"
+info:
+  title: "Customers API"
+  description: |
+    This API provides a simple customer storage service.
+  version: "2020-10-20"
+
+# Enable request validator. See doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-validation-sample-api-swagger.html
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+x-amazon-apigateway-request-validator: all
+
+paths:
+  /customers:
+    post:
+      summary: "Create a customer."
+      description: "Create and return a new customer."
+      operationId: NewCustomer
+      tags:
+      - customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewCustomer'
+      responses:
+        '201':
+          description: customer created response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+        httpMethod: POST
+        type: aws_proxy
+        passthroughBehavior: never
+      security:
+      - sigv4: []
+    get:
+      summary: "Get a list of customers."
+      operationId: Customers
+      description: "Return a list of customers."
+      tags:
+      - customer
+      parameters:
+        - name: nextToken
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: maxItems
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: customers response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomersPage'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+        httpMethod: POST
+        type: aws_proxy
+        passthroughBehavior: never
+      security:
+      - sigv4: []
+  /customers/{id}:
+    get:
+      operationId: GetCustomer
+      description: Returns a customer based on it's identifier.
+      tags:
+      - customer
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of customer to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: customer response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          description: The customer does not exists.
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+        httpMethod: POST
+        type: aws_proxy
+        passthroughBehavior: never
+      security:
+      - sigv4: []
+    put:
+      summary: "Update a customer."
+      operationId: UpdateCustomer
+      description: "Update and return a customer."
+      tags:
+      - customer
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of customer to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatedCustomer'
+      responses:
+        '201':
+          description: customer updated response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+        httpMethod: POST
+        type: aws_proxy
+        passthroughBehavior: never
+      security:
+      - sigv4: []
+components:
+  securitySchemes:
+    sigv4:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: awsSigv4
+  schemas:
+    NewCustomer:
+      description: New Customer request.
+      required:
+        - name
+        - labels
+      properties:
+        name:
+          type: string
+          description: The name of the customer.
+          example: New Customer
+        description:
+          type: string
+          description:
+            A description of the customer, with some background.
+        labels:
+          type: array
+          description: Labels assigned to an entity.
+          items:
+            type: string
+    UpdatedCustomer:
+      description: Update Customer request.
+      allOf:
+        - $ref: '#/components/schemas/NewCustomer'
+        - required:
+          - version
+          properties:
+            version:
+              type: integer
+              format: int64
+    Customer:
+      description: Customer response.
+      type: object
+      required:
+        - id
+        - name
+        - labels
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Customer identifier.
+          example: 0123456789ABCDEFGHJKMNPQRSTVWXYZ
+        name:
+          type: string
+          description: The name of the customer.
+          example: New Customer
+        description:
+          type: string
+          description:
+            A description of the customer, with some background.
+        labels:
+          type: array
+          description: Labels assigned to an entity.
+          items:
+            type: string
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp the customer was last updated
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp the customer was created
+    CustomersPage:
+      description: Customer page response.
+      required:
+        - customers
+      properties:
+        customers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'

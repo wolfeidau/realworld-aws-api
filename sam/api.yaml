@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: >-
+  This template creates API Gateway and Lambda resources for the backend service.
+
+Parameters:
+  AppName:
+      Type: String
+
+  Stage:
+    Type: String
+    Description: The stage where the application is running in, e.g., dev, prod.
+  
+  Branch:
+    Type: String
+
+Conditions:
+  IsProd:
+    !Equals [!Ref Stage, "prod"]
+Resources:
+  ApplicationsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      # Use DefinitionBody for swagger file so that we can use CloudFormation intrinsic functions within the swagger file
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: '../openapi/customers.yaml'
+      StageName: Prod
+      TracingEnabled: true # Enable AWS X-Ray to help debug API requests
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          # Disable data trace in production to avoid logging customer sensitive information from requests and responses
+          DataTraceEnabled: !If [IsProd, false, true]
+          LoggingLevel: INFO
+          MetricsEnabled: true
+          ThrottlingRateLimit: 5
+          ThrottlingBurstLimit: 10
+      AccessLogSetting:
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
+        Format: '$context.identity.sourceIp $context.authorizer.claims.sub [$context.requestTime] "$context.httpMethod $context.resourcePath $context.protocol" $context.status $context.requestId $context.awsEndpointRequestId $context.xrayTraceId $context.responseLatency $context.integrationLatency "$context.error.message"'
+      OpenApiVersion: '3.0.0'
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'authorization, content-type'"
+
+  ApiLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../handler.zip
+      Handler: api-lambda
+      MemorySize: 256
+      Timeout: 30
+      Runtime: go1.x
+      Tracing: Active # Enable AWS X-Ray to help debug API requests
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+      Events:
+        AnyApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApplicationsApi
+            Path: '/*'
+            Method: '*'
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Enabled: true
+        # Use AllAtOnce in non-production environment to accelerate deployment
+        Type: !If [IsProd, Canary10Percent15Minutes, AllAtOnce]
+        Alarms:
+          - !Ref ApiAvailability
+          - !Ref Api4xxErrors
+          - !Ref ApiLatencyP50
+
+  # This role allows API Gateway to push execution and access logs to CloudWatch logs
+  ApiGatewayPushToCloudWatchRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Description: "Push logs to CloudWatch logs from API Gateway"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+
+  ApiAccount:
+    Type: "AWS::ApiGateway::Account"
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayPushToCloudWatchRole.Arn
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/AccessLog-${ApplicationsApi}
+      RetentionInDays: 3653
+
+  # Alarms used in canary deployment for Applications API.
+  ApiAvailability:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: false
+      AlarmDescription: !Sub 'Api availability is lower than 90%. Only used in canary deployment for Lambda ${ApiLambda}'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub realworld-serverless-application-backend-${Stage}
+      EvaluationPeriods: 5
+      MetricName: 5XXErrors
+      Namespace: AWS/ApiGateway
+      Period: 60
+      Statistic: Average
+      Threshold: 0.1
+      TreatMissingData: notBreaching
+  Api4xxErrors:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: false
+      AlarmDescription: !Sub 'Api 4xx Errors are more than 30%. Only used in canary deployment for Lambda ${ApiLambda}'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub realworld-serverless-application-backend-${Stage}
+      EvaluationPeriods: 5
+      MetricName: 4XXErrors
+      Namespace: AWS/ApiGateway
+      Period: 60
+      Statistic: Average
+      Threshold: 0.3
+      TreatMissingData: notBreaching
+  ApiLatencyP50:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      ActionsEnabled: false
+      AlarmDescription: !Sub 'Api latency p50 is too high. Only used in canary deployment for Lambda ${ApiLambda}'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub realworld-serverless-application-backend-${Stage}
+      EvaluationPeriods: 5
+      MetricName: Latency
+      Namespace: AWS/ApiGateway
+      Period: 60
+      ExtendedStatistic: p50
+      Threshold: 200
+      TreatMissingData: notBreaching
+
+  # Storing resources names to SSM
+  ApiLambdaName:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub "/config/${AppName}/${Stage}/${Branch}/ApiLambda/FunctionName"
+      Type: "String"
+      Value: !Ref ApiLambda
+      Description: "ApiLambda function name"
+  ApiLambdaArn:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub "/config/${AppName}/${Stage}/${Branch}/ApiLambda/FunctionArn"
+      Type: "String"
+      Value: !Ref ApiLambda
+      Description: "ApiLambda function ARN"
+  ApiLambdaVersion:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub "/config/${AppName}/${Stage}/${Branch}/ApiLambda/FunctionVersion"
+      Type: "String"
+      Value: !Ref ApiLambda.Version
+      Description: "ApiLambda function version for alias live"
+  ApiId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub "/config/${AppName}/${Stage}/${Branch}/ApplicationsApi/Id"
+      Type: "String"
+      Value: !Ref ApplicationsApi
+      Description: "ApplicationsApi Id"
+  ApiAccessLogGroupName:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub "/config/${AppName}/${Stage}/${Branch}/ApplicationsApi/AccessLog/LogGroupName"
+      Type: "String"
+      Value: !Ref ApiAccessLogGroup
+      Description: "ApplicationsApi access log CloudWatch log group name"
+
+Outputs:
+  ApiLambdaArn:
+    Value: !Ref ApiLambda
+  ApiId:
+    Value: !Ref ApplicationsApi
+  ApiAccessLogGroupName:
+    Value: !Ref ApiAccessLogGroup
