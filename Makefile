@@ -7,9 +7,9 @@ GOLANGCI_VERSION = 1.31.0
 GIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u '+%Y%m%dT%H%M%S')
 
-default: clean build archive package deploy
+default: clean generate build archive package deploy
 
-ci: clean lint test
+ci: clean generate lint test
 .PHONY: ci
 
 LDFLAGS := -ldflags="-s -w -X github.com/wolfeidau/realworld-aws-api/internal/app.BuildDate=${BUILD_DATE} -X github.com/wolfeidau/realworld-aws-api/internal/app.Commit=${GIT_HASH}"
@@ -43,6 +43,11 @@ test: bin/gcov2lcov
 	@go test -v -covermode=count -coverprofile=coverage.txt ./internal/...
 	@bin/gcov2lcov -infile=coverage.txt -outfile=coverage.lcov
 .PHONY: test
+
+generate:
+	@echo "--- generate all the things"
+	@go generate ./...
+.PHONY: generate
 
 build:
 	@echo "--- build all the things"
