@@ -6,9 +6,14 @@ package customersapi
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -82,6 +87,656 @@ type NewCustomerJSONRequestBody NewCustomerJSONBody
 
 // UpdateCustomerRequestBody defines body for UpdateCustomer for application/json ContentType.
 type UpdateCustomerJSONRequestBody UpdateCustomerJSONBody
+
+// RequestEditorFn  is the function signature for the RequestEditor callback function
+type RequestEditorFn func(ctx context.Context, req *http.Request) error
+
+// Doer performs HTTP requests.
+//
+// The standard http.Client implements this interface.
+type HttpRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// Client which conforms to the OpenAPI3 specification for this service.
+type Client struct {
+	// The endpoint of the server conforming to this interface, with scheme,
+	// https://api.deepmap.com for example.
+	Server string
+
+	// Doer for performing requests, typically a *http.Client with any
+	// customized settings, such as certificate chains.
+	Client HttpRequestDoer
+
+	// A callback for modifying requests which are generated before sending over
+	// the network.
+	RequestEditor RequestEditorFn
+}
+
+// ClientOption allows setting custom parameters during construction
+type ClientOption func(*Client) error
+
+// Creates a new Client, with reasonable defaults
+func NewClient(server string, opts ...ClientOption) (*Client, error) {
+	// create a client with sane default values
+	client := Client{
+		Server: server,
+	}
+	// mutate client and add all optional params
+	for _, o := range opts {
+		if err := o(&client); err != nil {
+			return nil, err
+		}
+	}
+	// ensure the server URL always has a trailing slash
+	if !strings.HasSuffix(client.Server, "/") {
+		client.Server += "/"
+	}
+	// create httpClient, if not already present
+	if client.Client == nil {
+		client.Client = http.DefaultClient
+	}
+	return &client, nil
+}
+
+// WithHTTPClient allows overriding the default Doer, which is
+// automatically created using http.Client. This is useful for tests.
+func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+	return func(c *Client) error {
+		c.Client = doer
+		return nil
+	}
+}
+
+// WithRequestEditorFn allows setting up a callback function, which will be
+// called right before sending the request. This can be used to mutate the request.
+func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+	return func(c *Client) error {
+		c.RequestEditor = fn
+		return nil
+	}
+}
+
+// The interface specification for the client above.
+type ClientInterface interface {
+	// Customers request
+	Customers(ctx context.Context, params *CustomersParams) (*http.Response, error)
+
+	// NewCustomer request  with any body
+	NewCustomerWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error)
+
+	NewCustomer(ctx context.Context, body NewCustomerJSONRequestBody) (*http.Response, error)
+
+	// GetCustomer request
+	GetCustomer(ctx context.Context, id string) (*http.Response, error)
+
+	// UpdateCustomer request  with any body
+	UpdateCustomerWithBody(ctx context.Context, id string, contentType string, body io.Reader) (*http.Response, error)
+
+	UpdateCustomer(ctx context.Context, id string, body UpdateCustomerJSONRequestBody) (*http.Response, error)
+}
+
+func (c *Client) Customers(ctx context.Context, params *CustomersParams) (*http.Response, error) {
+	req, err := NewCustomersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) NewCustomerWithBody(ctx context.Context, contentType string, body io.Reader) (*http.Response, error) {
+	req, err := NewNewCustomerRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) NewCustomer(ctx context.Context, body NewCustomerJSONRequestBody) (*http.Response, error) {
+	req, err := NewNewCustomerRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCustomer(ctx context.Context, id string) (*http.Response, error) {
+	req, err := NewGetCustomerRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCustomerWithBody(ctx context.Context, id string, contentType string, body io.Reader) (*http.Response, error) {
+	req, err := NewUpdateCustomerRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCustomer(ctx context.Context, id string, body UpdateCustomerJSONRequestBody) (*http.Response, error) {
+	req, err := NewUpdateCustomerRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if c.RequestEditor != nil {
+		err = c.RequestEditor(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.Client.Do(req)
+}
+
+// NewCustomersRequest generates requests for Customers
+func NewCustomersRequest(server string, params *CustomersParams) (*http.Request, error) {
+	var err error
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/customers")
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryUrl.Query()
+
+	if params.NextToken != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "nextToken", *params.NextToken); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	if params.MaxItems != nil {
+
+		if queryFrag, err := runtime.StyleParam("form", true, "maxItems", *params.MaxItems); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryUrl.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewNewCustomerRequest calls the generic NewCustomer builder with application/json body
+func NewNewCustomerRequest(server string, body NewCustomerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewNewCustomerRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewNewCustomerRequestWithBody generates requests for NewCustomer with any type of body
+func NewNewCustomerRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/customers")
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryUrl.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+	return req, nil
+}
+
+// NewGetCustomerRequest generates requests for GetCustomer
+func NewGetCustomerRequest(server string, id string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "id", id)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/customers/%s", pathParam0)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateCustomerRequest calls the generic UpdateCustomer builder with application/json body
+func NewUpdateCustomerRequest(server string, id string, body UpdateCustomerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateCustomerRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewUpdateCustomerRequestWithBody generates requests for UpdateCustomer with any type of body
+func NewUpdateCustomerRequestWithBody(server string, id string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParam("simple", false, "id", id)
+	if err != nil {
+		return nil, err
+	}
+
+	queryUrl, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	basePath := fmt.Sprintf("/customers/%s", pathParam0)
+	if basePath[0] == '/' {
+		basePath = basePath[1:]
+	}
+
+	queryUrl, err = queryUrl.Parse(basePath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryUrl.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+	return req, nil
+}
+
+// ClientWithResponses builds on ClientInterface to offer response payloads
+type ClientWithResponses struct {
+	ClientInterface
+}
+
+// NewClientWithResponses creates a new ClientWithResponses, which wraps
+// Client with return type handling
+func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
+	client, err := NewClient(server, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientWithResponses{client}, nil
+}
+
+// WithBaseURL overrides the baseURL.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) error {
+		newBaseURL, err := url.Parse(baseURL)
+		if err != nil {
+			return err
+		}
+		c.Server = newBaseURL.String()
+		return nil
+	}
+}
+
+// ClientWithResponsesInterface is the interface specification for the client with responses above.
+type ClientWithResponsesInterface interface {
+	// Customers request
+	CustomersWithResponse(ctx context.Context, params *CustomersParams) (*CustomersResponse, error)
+
+	// NewCustomer request  with any body
+	NewCustomerWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*NewCustomerResponse, error)
+
+	NewCustomerWithResponse(ctx context.Context, body NewCustomerJSONRequestBody) (*NewCustomerResponse, error)
+
+	// GetCustomer request
+	GetCustomerWithResponse(ctx context.Context, id string) (*GetCustomerResponse, error)
+
+	// UpdateCustomer request  with any body
+	UpdateCustomerWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader) (*UpdateCustomerResponse, error)
+
+	UpdateCustomerWithResponse(ctx context.Context, id string, body UpdateCustomerJSONRequestBody) (*UpdateCustomerResponse, error)
+}
+
+type CustomersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CustomersPage
+}
+
+// Status returns HTTPResponse.Status
+func (r CustomersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CustomersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type NewCustomerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Customer
+}
+
+// Status returns HTTPResponse.Status
+func (r NewCustomerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r NewCustomerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetCustomerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Customer
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCustomerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCustomerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateCustomerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Customer
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateCustomerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateCustomerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// CustomersWithResponse request returning *CustomersResponse
+func (c *ClientWithResponses) CustomersWithResponse(ctx context.Context, params *CustomersParams) (*CustomersResponse, error) {
+	rsp, err := c.Customers(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCustomersResponse(rsp)
+}
+
+// NewCustomerWithBodyWithResponse request with arbitrary body returning *NewCustomerResponse
+func (c *ClientWithResponses) NewCustomerWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader) (*NewCustomerResponse, error) {
+	rsp, err := c.NewCustomerWithBody(ctx, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseNewCustomerResponse(rsp)
+}
+
+func (c *ClientWithResponses) NewCustomerWithResponse(ctx context.Context, body NewCustomerJSONRequestBody) (*NewCustomerResponse, error) {
+	rsp, err := c.NewCustomer(ctx, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseNewCustomerResponse(rsp)
+}
+
+// GetCustomerWithResponse request returning *GetCustomerResponse
+func (c *ClientWithResponses) GetCustomerWithResponse(ctx context.Context, id string) (*GetCustomerResponse, error) {
+	rsp, err := c.GetCustomer(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCustomerResponse(rsp)
+}
+
+// UpdateCustomerWithBodyWithResponse request with arbitrary body returning *UpdateCustomerResponse
+func (c *ClientWithResponses) UpdateCustomerWithBodyWithResponse(ctx context.Context, id string, contentType string, body io.Reader) (*UpdateCustomerResponse, error) {
+	rsp, err := c.UpdateCustomerWithBody(ctx, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCustomerResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateCustomerWithResponse(ctx context.Context, id string, body UpdateCustomerJSONRequestBody) (*UpdateCustomerResponse, error) {
+	rsp, err := c.UpdateCustomer(ctx, id, body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCustomerResponse(rsp)
+}
+
+// ParseCustomersResponse parses an HTTP response from a CustomersWithResponse call
+func ParseCustomersResponse(rsp *http.Response) (*CustomersResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CustomersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CustomersPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseNewCustomerResponse parses an HTTP response from a NewCustomerWithResponse call
+func ParseNewCustomerResponse(rsp *http.Response) (*NewCustomerResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &NewCustomerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Customer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetCustomerResponse parses an HTTP response from a GetCustomerWithResponse call
+func ParseGetCustomerResponse(rsp *http.Response) (*GetCustomerResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCustomerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Customer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateCustomerResponse parses an HTTP response from a UpdateCustomerWithResponse call
+func ParseUpdateCustomerResponse(rsp *http.Response) (*UpdateCustomerResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateCustomerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Customer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

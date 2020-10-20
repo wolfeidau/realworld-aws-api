@@ -9,3 +9,9 @@ type API struct {
 	Stage   string `help:"Stage the software is deployed." env:"STAGE"`
 	Branch  string `help:"Branch used to build software." env:"BRANCH"`
 }
+
+// Client client flags
+type Client struct {
+	Version kong.VersionFlag
+	URL     string `help:"The base URL for the API." kong:"required"`
+}

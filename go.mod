@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v0.2.11
 	github.com/apex/gateway v1.1.2
 	github.com/aws/aws-lambda-go v1.19.1
+	github.com/aws/aws-sdk-go v1.35.11
 	github.com/deepmap/oapi-codegen v1.3.13
 	github.com/getkin/kin-openapi v0.13.0
 	github.com/labstack/echo/v4 v4.1.17

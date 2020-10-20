@@ -8,8 +8,8 @@ The main goal of this project is to illustrate how to build a maintainable real 
 
 * Contract first [OpenAPI](https://swagger.io/specification/) using code generation
 * Validation of inputs in both API Gateway and the server
-* The ability to run the lambda service locally without the need for SAM, this is mainly to enable compile on change for local development
-* Logging with meta data including lambda request identifiers 
+* Logging with meta data including lambda request identifiers
+* Provide an example client using [sigv4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) with Go.
 
 # Conventions
 
@@ -33,6 +33,14 @@ Run make to deploy the stack.
 make
 ```
 
+# Client
+
+To invoke a simple API which is authenticated using [sigv4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) I have included a generated client, to use this you will need `AWS_REGION` and `AWS_PROFILE` exported as environment variables.
+
+```
+go run cmd/customer-cli/main.go --url=https://xxxxxxxxxx.execute-api.us-west-2.amazonaws.com/Prod
+```
+
 # Libraries
 
 * [github.com/aws/aws-lambda-go](https://github.com/aws/aws-lambda-go)
@@ -40,6 +48,11 @@ make
 * [github.com/rs/zerolog](https://github.com/rs/zerolog)
 * [github.com/deepmap/oapi-codegen](https://github.com/deepmap/oapi-codegen)
 * [github.com/labstack/echo/v4](https://github.com/labstack/echo/v4)
+
+# TODO
+
+* Add the ability to run the lambda service locally without the need for SAM, this is mainly to enable compile on change for local development
+
 
 # License
 
