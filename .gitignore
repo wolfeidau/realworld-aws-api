@@ -1,7 +1,7 @@
 /dist
 /bin
 /coverage.*
-.envrc*
+.envrc
 /awsmocks
 /handler.zip
 /*.out.yaml
