@@ -7,7 +7,7 @@ GOLANGCI_VERSION = 1.31.0
 GIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u '+%Y%m%dT%H%M%S')
 
-default: clean build archive deploy
+default: clean build archive package deploy
 
 ci: clean lint test
 .PHONY: ci
@@ -56,6 +56,7 @@ archive:
 .PHONY: archive
 
 package:
+	@echo "--- uploading cloudformation assets to $(S3_BUCKET)"
 	@aws cloudformation package \
 		--template-file sam/api.yaml \
 		--output-template-file api.out.yaml \
@@ -64,7 +65,7 @@ package:
 .PHONY: package
 
 deploy:
-	@echo "--- deploy api into aws"
+	@echo "--- deploy stack $(APPNAME)-$(STAGE)-$(BRANCH)"
 	@aws cloudformation deploy \
 		--no-fail-on-empty-changeset \
 		--template-file api.out.yaml \

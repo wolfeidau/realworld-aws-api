@@ -11,6 +11,21 @@ The main goal of this project is to illustrate how to build a maintainable real 
 * The ability to run the lambda service locally without the need for SAM, this is mainly to enable compile on change for local development
 * Logging with meta data including lambda request identifiers 
 
+# Deployment
+
+Create an `.envrc` using the `.envrc.example` and update it with your settings, this is used with [direnv](https://direnv.net/).
+
+```
+cp .envrc.example .envrc
+```
+
+Run make to deploy the stack.
+
+```
+make
+```
+
+
 # Libraries
 
 * [github.com/aws/aws-lambda-go](https://github.com/aws/aws-lambda-go)
