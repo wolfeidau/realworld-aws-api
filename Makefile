@@ -26,6 +26,14 @@ bin/mockgen:
 bin/gcov2lcov:
 	@env GOBIN=$$PWD/bin GO111MODULE=on go install github.com/jandelgado/gcov2lcov
 
+bin/protoc-gen-go:
+	@env GOBIN=$$PWD/bin GO111MODULE=on go install github.com/golang/protobuf/protoc-gen-go
+
+mocks: bin/mockgen
+	@echo "--- build all the mocks"
+	@bin/mockgen -destination=mocks/customers_store.go -package=mocks github.com/wolfeidau/realworld-aws-api/internal/stores Customers
+.PHONY: mocks
+
 clean:
 	@echo "--- clean all the things"
 	@rm -rf ./dist
@@ -48,6 +56,11 @@ generate:
 	@echo "--- generate all the things"
 	@go generate ./...
 .PHONY: generate
+
+proto: proto/customers/storage/v1beta1/storage.pb.go
+
+proto/customers/storage/v1beta1/storage.pb.go: proto/customers/storage/v1beta1/storage.proto
+	protoc -I proto --go_out=paths=source_relative:proto --plugin=bin/protoc-gen-go proto/customers/storage/v1beta1/storage.proto
 
 build:
 	@echo "--- build all the things"

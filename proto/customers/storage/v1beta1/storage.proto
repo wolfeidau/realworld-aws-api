@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+package customers.storage.v2beta1;
+option go_package = "github.com/wolfeidau/realworld-aws-api/proto/customers/storage/v1beta1;storagev1beta1";
+
+message Customer {
+  string name = 1;
+  google.protobuf.StringValue description = 2;
+  repeated string labels = 3;
+  google.protobuf.Timestamp created = 4 [ json_name = "created_at" ];
+  google.protobuf.Timestamp updated = 5 [ json_name = "updated_at" ];
+}

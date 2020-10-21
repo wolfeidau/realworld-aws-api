@@ -29,6 +29,30 @@ Conditions:
   IsProd:
     !Equals [!Ref Stage, "prod"]
 Resources:
+  CustomersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: name
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires
+        Enabled: true
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
   ApplicationsApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -63,6 +87,12 @@ Resources:
       CodeUri: ../handler.zip
       Handler: api-lambda
       Tracing: Active # Enable AWS X-Ray to help debug API requests
+      Environment:
+        Variables:
+          CUSTOMERS_TABLE: !Ref CustomersTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CustomersTable
       Events:
         AnyApi:
           Type: Api

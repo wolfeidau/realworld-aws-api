@@ -8,6 +8,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/apex/gateway"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
@@ -20,6 +21,7 @@ import (
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
 	"github.com/wolfeidau/realworld-aws-api/internal/flags"
 	"github.com/wolfeidau/realworld-aws-api/internal/server"
+	"github.com/wolfeidau/realworld-aws-api/internal/stores"
 )
 
 var cfg = new(flags.API)
@@ -29,7 +31,11 @@ func main() {
 		kong.Vars{"version": fmt.Sprintf("%s_%s", app.Commit, app.BuildDate)}, // bind a var for version
 	)
 
-	srv := server.NewCustomers(cfg)
+	awscfg := new(aws.Config)
+
+	customerStore := stores.NewCustomers(awscfg, cfg)
+
+	srv := server.NewCustomers(cfg, customerStore)
 
 	// build a list of fields to include in all events
 	flds := lmw.FieldMap{"commit": app.Commit, "buildDate": app.BuildDate, "stage": cfg.Stage, "branch": cfg.Branch}
