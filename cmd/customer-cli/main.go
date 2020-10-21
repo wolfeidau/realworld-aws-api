@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/wolfeidau/realworld-aws-api/internal/httplog"
+
 	"github.com/alecthomas/kong"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -17,13 +19,17 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/wolfeidau/realworld-aws-api/internal/app"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
-	"github.com/wolfeidau/realworld-aws-api/internal/flags"
 )
 
-var cfg = new(flags.Client)
+var cfg struct {
+	Version kong.VersionFlag
+	URL     string `help:"The base URL for the API." kong:"required"`
+
+	CreateCustomer CreateCustomerCmd `cmd:"create-customer" help:"Create Customer."`
+}
 
 func main() {
-	kong.Parse(cfg,
+	cli := kong.Parse(&cfg,
 		kong.Vars{"version": fmt.Sprintf("%s_%s", app.Commit, app.BuildDate)}, // bind a var for version
 	)
 
@@ -31,27 +37,33 @@ func main() {
 
 	awscfg := new(aws.Config)
 
+	t := &httplog.Transport{}
+	httpClient := &http.Client{Transport: t}
+
 	client, err := customersapi.NewClientWithResponses(cfg.URL,
-		customersapi.WithRequestEditorFn(requestSigner(awscfg)))
+		customersapi.WithRequestEditorFn(requestSigner(awscfg)), customersapi.WithHTTPClient(httpClient))
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to build client")
 	}
 
-	log.Info().Msg("get a list of customers from the api")
+	err = cli.Run(&CLIContext{customers: client})
+	cli.FatalIfErrorf(err)
 
-	// to illustrate a basic client we can call to get a list of customers
-	res, err := client.CustomersWithResponse(context.Background(), &customersapi.CustomersParams{})
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to list customers")
-	}
-
-	if res.StatusCode() != http.StatusOK {
-		log.Fatal().Str("status", res.Status()).Msg("request failed")
-	}
-
-	log.Info().Fields(map[string]interface{}{
-		"customerPage": res.JSON200,
-	}).Msg("customer list result")
+	//log.Info().Msg("get a list of customers from the api")
+	//
+	//// to illustrate a basic client we can call to get a list of customers
+	//res, err := client.CustomersWithResponse(context.Background(), &customersapi.CustomersParams{})
+	//if err != nil {
+	//	log.Fatal().Err(err).Msg("failed to list customers")
+	//}
+	//
+	//if res.StatusCode() != http.StatusOK {
+	//	log.Fatal().Str("status", res.Status()).Msg("request failed")
+	//}
+	//
+	//log.Info().Fields(map[string]interface{}{
+	//	"customerPage": res.JSON200,
+	//}).Msg("customer list result")
 
 }
 
