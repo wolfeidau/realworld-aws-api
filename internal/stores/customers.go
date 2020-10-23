@@ -28,7 +28,6 @@ type DDBCustomers struct {
 }
 
 func (dc *DDBCustomers) GetCustomer(ctx context.Context, id string, into proto.Message) (int64, error) {
-
 	log.Ctx(ctx).Info().Str("id", id).Msg("get customer")
 
 	key := fmt.Sprintf("%s%s", customerRecordPrefix, id)
@@ -80,7 +79,6 @@ func (dc *DDBCustomers) ListCustomers(ctx context.Context, nextToken string, lim
 }
 
 func (dc *DDBCustomers) CreateCustomer(ctx context.Context, id, name string, obj proto.Message) (int64, error) {
-
 	log.Ctx(ctx).Info().Str("id", id).Str("name", name).Msg("create customer")
 
 	exists, err := dc.customerNamesPart.Exists(name)

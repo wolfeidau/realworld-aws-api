@@ -38,7 +38,6 @@ func TestDDBCustomers(t *testing.T) {
 	})
 
 	t.Run("get", func(t *testing.T) {
-
 		id, name, labels := "cde456", "new get customer", []string{"test"}
 		newCust := newStoreCustomer(name, labels)
 
@@ -55,7 +54,6 @@ func TestDDBCustomers(t *testing.T) {
 	})
 
 	t.Run("list", func(t *testing.T) {
-
 		id, name, labels := "fgh789", "new new get customer", []string{"test"}
 		newCust := newStoreCustomer(name, labels)
 
@@ -68,7 +66,6 @@ func TestDDBCustomers(t *testing.T) {
 		assert.NotZero(nextToken)
 		assert.Len(records, 1)
 	})
-
 }
 
 func newStoreCustomer(name string, labels []string) *storagepb.Customer {

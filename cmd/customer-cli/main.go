@@ -28,7 +28,6 @@ var cfg struct {
 }
 
 func main() {
-
 	// setup zerolog logger and inject config into the context
 	ctx := logger.NewLoggerWithContext(context.Background())
 

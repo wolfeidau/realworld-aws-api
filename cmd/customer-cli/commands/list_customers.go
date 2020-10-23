@@ -14,7 +14,6 @@ type ListCustomersCmd struct {
 }
 
 func (ccc *ListCustomersCmd) Run(ctx context.Context, cli *CLIContext) error {
-
 	log.Ctx(ctx).Info().Msg("get a list of customers from the api")
 
 	params := &customersapi.CustomersParams{
@@ -34,5 +33,5 @@ func (ccc *ListCustomersCmd) Run(ctx context.Context, cli *CLIContext) error {
 		log.Ctx(ctx).Fatal().Str("status", res.Status()).Msg("request failed")
 	}
 
-	return cli.writeJson(res.JSON200)
+	return cli.writeJSON(res.JSON200)
 }

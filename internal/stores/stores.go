@@ -22,7 +22,6 @@ type Customers interface {
 }
 
 func NewCustomers(awsconfig *aws.Config, cfg *flags.API) Customers {
-
 	session := dynastore.New(awsconfig)
 
 	tbl := session.Table(cfg.CustomersTable)

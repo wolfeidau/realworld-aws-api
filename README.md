@@ -9,7 +9,81 @@ The main goal of this project is to illustrate how to build a maintainable real 
 * Contract first [OpenAPI](https://swagger.io/specification/) using code generation
 * Validation of inputs in both API Gateway and the server
 * Logging with meta data including lambda request identifiers
-* Provide an example client using [sigv4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) with Go.
+* Provide an [API Gateway](https://aws.amazon.com/api-gateway/) client using [sigv4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) with Go.
+* Protobuf based versioned storage using [DynamoDB](https://aws.amazon.com/dynamodb/)
+* Local testing with [docker](https://www.docker.com) using [github.com/ory/dockertest/v3](https://github.com/ory/dockertest) and [DynamoDB Local](https://hub.docker.com/r/amazon/dynamodb-local/)
+* CLI using [github.com/alecthomas/kong](https://github.com/alecthomas/kong) with logging and sub commands
+* Linting using [golangci-lint](https://github.com/golangci/golangci-lint)
+
+# CLI
+
+The CLI provides a simple interface to access data via the API.
+
+```
+$ customer-cli --help
+Usage: customer-cli --url=STRING <command>
+
+Flags:
+  -h, --help          Show context-sensitive help.
+      --version
+      --debug
+      --url=STRING
+
+Commands:
+  create-customer --url=STRING --name=STRING --labels=LABELS,...
+    New Customer.
+
+  get-customer --url=STRING --id=STRING
+    Read Customer.
+
+  list-customers --url=STRING
+    Read a list of Customers.
+
+Run "customer-cli <command> --help" for more information on a command.
+
+```
+
+Reading a list of customers from the API.
+
+```console
+$ customer-cli --url=https://xxxxxxxxxx.execute-api.us-west-2.amazonaws.com/Prod list-customers  | jq .
+6:33PM INF cmd/customer-cli/commands/list_customers.go:18 > get a list of customers from the api
+6:33PM INF cmd/customer-cli/apigw/apigw.go:25 > signing request host=z0d3zmnwh1.execute-api.us-west-2.amazonaws.com
+{
+  "customers": [
+    {
+      "created_at": "2020-10-22T17:38:34.242777542Z",
+      "description": "test",
+      "id": "01EN8P84M2P9RQJ1XV3XQR4DZM",
+      "labels": [
+        "test"
+      ],
+      "name": "test",
+      "updated_at": "2020-10-22T17:38:34.242778239Z"
+    },
+    {
+      "created_at": "2020-10-22T17:41:23.701550324Z",
+      "description": "test",
+      "id": "01EN8PDA3N91HNQEVV16HX6J27",
+      "labels": [
+        "test"
+      ],
+      "name": "test2",
+      "updated_at": "2020-10-22T17:41:23.701551096Z"
+    },
+    {
+      "created_at": "2020-10-23T02:21:37.259975291Z",
+      "description": "test",
+      "id": "01EN9M5W3BDKGR3RGCEGNSBYHQ",
+      "labels": [
+        "test"
+      ],
+      "name": "test3",
+      "updated_at": "2020-10-23T02:21:37.259975968Z"
+    }
+  ]
+}
+```
 
 # Conventions
 
@@ -48,6 +122,7 @@ go run cmd/customer-cli/main.go --url=https://xxxxxxxxxx.execute-api.us-west-2.a
 * [github.com/rs/zerolog](https://github.com/rs/zerolog)
 * [github.com/deepmap/oapi-codegen](https://github.com/deepmap/oapi-codegen)
 * [github.com/labstack/echo/v4](https://github.com/labstack/echo/v4)
+* [github.com/wolfeidau/dynastore](https://github.com/wolfeidau/dynastore)
 
 # TODO
 
