@@ -56,6 +56,8 @@ Resources:
   ApplicationsApi:
     Type: AWS::Serverless::Api
     Properties:
+      EndpointConfiguration:
+        Type: REGIONAL
       # Use DefinitionBody for swagger file so that we can use CloudFormation intrinsic functions within the swagger file
       DefinitionBody:
         'Fn::Transform':
@@ -80,6 +82,12 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'authorization, content-type'"
+
+  ApiLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ApiLambda}"
+      RetentionInDays: !If [IsProd, 365, 14]
 
   ApiLambda:
     Type: AWS::Serverless::Function
@@ -135,7 +143,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/AccessLog-${ApplicationsApi}
-      RetentionInDays: 3653
+      RetentionInDays: !If [IsProd, 365, 14]
 
   # Alarms used in canary deployment for Applications API.
   ApiAvailability:
@@ -231,5 +239,7 @@ Outputs:
     Value: !Ref ApplicationsApi
   ApiAccessLogGroupName:
     Value: !Ref ApiAccessLogGroup
+  ApiLambdaLogGroupName:
+    Value: !Ref ApiLambdaLogGroup
   ApiURL:
     Value: !Sub "https://${ApplicationsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
