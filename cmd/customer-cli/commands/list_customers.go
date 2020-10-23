@@ -13,9 +13,9 @@ type ListCustomersCmd struct {
 	Limit     int `default:"100"`
 }
 
-func (ccc *ListCustomersCmd) Run(cli *CLIContext) error {
+func (ccc *ListCustomersCmd) Run(ctx context.Context, cli *CLIContext) error {
 
-	log.Info().Msg("get a list of customers from the api")
+	log.Ctx(ctx).Info().Msg("get a list of customers from the api")
 
 	params := &customersapi.CustomersParams{
 		MaxItems: &ccc.Limit,
@@ -25,13 +25,13 @@ func (ccc *ListCustomersCmd) Run(cli *CLIContext) error {
 		params.NextToken = &ccc.NextToken
 	}
 
-	res, err := cli.Customers.CustomersWithResponse(context.Background(), params)
+	res, err := cli.Customers.CustomersWithResponse(ctx, params)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to list customers")
+		log.Ctx(ctx).Fatal().Err(err).Msg("failed to list customers")
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		log.Fatal().Str("status", res.Status()).Msg("request failed")
+		log.Ctx(ctx).Fatal().Str("status", res.Status()).Msg("request failed")
 	}
 
 	return cli.writeJson(res.JSON200)

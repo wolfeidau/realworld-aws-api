@@ -19,6 +19,7 @@ const (
 
 var (
 	ErrCustomerNameConfict = errors.New("customer name already exists")
+	ErrCustomerNotFound    = errors.New("customer not found")
 )
 
 type DDBCustomers struct {
@@ -34,6 +35,9 @@ func (dc *DDBCustomers) GetCustomer(ctx context.Context, id string, into proto.M
 
 	kv, err := dc.customerPart.Get(key)
 	if err != nil {
+		if err == dynastore.ErrKeyNotFound {
+			return 0, ErrCustomerNotFound
+		}
 		return 0, err
 	}
 

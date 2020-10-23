@@ -11,17 +11,17 @@ type GetCustomerCmd struct {
 	ID string `kong:"required"`
 }
 
-func (ccc *GetCustomerCmd) Run(cli *CLIContext) error {
+func (ccc *GetCustomerCmd) Run(ctx context.Context, cli *CLIContext) error {
 
-	log.Info().Str("id", ccc.ID).Msg("get a customers from the api")
+	log.Ctx(ctx).Info().Str("id", ccc.ID).Msg("get a customers from the api")
 
-	res, err := cli.Customers.GetCustomerWithResponse(context.Background(), ccc.ID)
+	res, err := cli.Customers.GetCustomerWithResponse(ctx, ccc.ID)
 	if err != nil {
 		return err
 	}
 
 	if res.StatusCode() != http.StatusOK {
-		log.Fatal().Str("status", res.Status()).Msg("request failed")
+		log.Ctx(ctx).Fatal().Str("status", res.Status()).Msg("request failed")
 	}
 
 	return cli.writeJson(res.JSON200)

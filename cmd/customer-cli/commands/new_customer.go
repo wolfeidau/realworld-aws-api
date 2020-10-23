@@ -14,7 +14,7 @@ type NewCustomerCmd struct {
 	Description string
 }
 
-func (ccc *NewCustomerCmd) Run(cli *CLIContext) error {
+func (ccc *NewCustomerCmd) Run(ctx context.Context, cli *CLIContext) error {
 
 	newCust := customersapi.NewCustomerJSONRequestBody{
 		Description: nil,
@@ -26,13 +26,13 @@ func (ccc *NewCustomerCmd) Run(cli *CLIContext) error {
 		newCust.Description = &ccc.Description
 	}
 
-	res, err := cli.Customers.NewCustomerWithResponse(context.Background(), newCust)
+	res, err := cli.Customers.NewCustomerWithResponse(ctx, newCust)
 	if err != nil {
 		return err
 	}
 
 	if res.StatusCode() != http.StatusCreated {
-		log.Fatal().Str("status", res.Status()).Msg("request failed")
+		log.Ctx(ctx).Fatal().Str("status", res.Status()).Msg("request failed")
 	}
 
 	return cli.writeJson(res.JSON201)

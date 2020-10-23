@@ -92,6 +92,9 @@ func (cs *Customers) GetCustomer(c echo.Context, id string) error {
 
 	_, err := cs.customerStore.GetCustomer(c.Request().Context(), id, cust)
 	if err != nil {
+		if err == stores.ErrCustomerNotFound {
+			return c.NoContent(http.StatusNotFound)
+		}
 		log.Ctx(ctx).Error().Err(err).Msg("failed to get customer")
 		return c.NoContent(http.StatusInternalServerError)
 	}

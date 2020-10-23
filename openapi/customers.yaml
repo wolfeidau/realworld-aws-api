@@ -69,6 +69,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomersPage'
+        '404':
+          description: customer not found
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations

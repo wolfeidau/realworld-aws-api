@@ -81,23 +81,38 @@ func TestCustomers_GetCustomer(t *testing.T) {
 
 	e := echo.New()
 
-	id := "abc123"
+	t.Run("get by id", func(t *testing.T) {
+		id := "abc123"
 
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/customers/%s", id), nil)
-	req = req.WithContext(logger.NewLoggerWithContext(context.TODO()))
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/customers/%s", id), nil)
+		req = req.WithContext(logger.NewLoggerWithContext(context.TODO()))
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
 
-	err := cs.GetCustomer(c, id)
-	assert.NoError(err)
-	assert.Equal(http.StatusOK, rec.Code)
+		err := cs.GetCustomer(c, id)
+		assert.NoError(err)
+		assert.Equal(http.StatusOK, rec.Code)
 
-	cust := new(customersapi.Customer)
-	err = json.Unmarshal(rec.Body.Bytes(), cust)
-	assert.NoError(err)
-	assert.Equal("test", cust.Name)
-	assert.Equal([]string{"test"}, cust.Labels)
+		cust := new(customersapi.Customer)
+		err = json.Unmarshal(rec.Body.Bytes(), cust)
+		assert.NoError(err)
+		assert.Equal("test", cust.Name)
+		assert.Equal([]string{"test"}, cust.Labels)
+	})
 
+	t.Run("not found", func(t *testing.T) {
+		id := "nothinghere"
+
+		customerStore.EXPECT().GetCustomer(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), stores.ErrCustomerNotFound)
+
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/customers/%s", id), nil)
+		req = req.WithContext(logger.NewLoggerWithContext(context.TODO()))
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		err := cs.GetCustomer(c, id)
+		assert.NoError(err)
+		assert.Equal(http.StatusNotFound, rec.Code)
+	})
 }
 
 func TestCustomers_Customers(t *testing.T) {
