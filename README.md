@@ -48,7 +48,7 @@ Reading a list of customers from the API.
 ```console
 $ customer-cli --url=https://xxxxxxxxxx.execute-api.us-west-2.amazonaws.com/Prod list-customers  | jq .
 6:33PM INF cmd/customer-cli/commands/list_customers.go:18 > get a list of customers from the api
-6:33PM INF cmd/customer-cli/apigw/apigw.go:25 > signing request host=z0d3zmnwh1.execute-api.us-west-2.amazonaws.com
+6:33PM INF cmd/customer-cli/apigw/apigw.go:25 > signing request host=xxxxxxxxxx.execute-api.us-west-2.amazonaws.com
 {
   "customers": [
     {
