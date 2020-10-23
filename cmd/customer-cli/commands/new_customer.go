@@ -35,9 +35,5 @@ func (ccc *NewCustomerCmd) Run(cli *CLIContext) error {
 		log.Fatal().Str("status", res.Status()).Msg("request failed")
 	}
 
-	log.Info().Fields(map[string]interface{}{
-		"customer": res.JSON201,
-	}).Msg("customer created")
-
-	return nil
+	return cli.writeJson(res.JSON201)
 }

@@ -10,6 +10,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+
+	"github.com/wolfeidau/realworld-aws-api/internal/stores"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
@@ -80,7 +84,6 @@ func TestCustomers_GetCustomer(t *testing.T) {
 	id := "abc123"
 
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/customers/%s", id), nil)
-	//req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	req = req.WithContext(logger.NewLoggerWithContext(context.TODO()))
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -94,5 +97,49 @@ func TestCustomers_GetCustomer(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal("test", cust.Name)
 	assert.Equal([]string{"test"}, cust.Labels)
+
+}
+
+func TestCustomers_Customers(t *testing.T) {
+	assert := require.New(t)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	customerStore := mocks.NewMockCustomers(ctrl)
+
+	callbackFunc := func(ctx context.Context, next string, limit int) (string, []stores.Record, error) {
+		data, err := base64.StdEncoding.DecodeString("CgR0ZXN0EgYKBHRlc3QaBHRlc3QiCwiah8f8BRDG++FzKgsImofH/AUQ/4Dicw==")
+		assert.NoError(err)
+
+		recs := []stores.Record{
+			{Data: data, Version: 1, ID: "abc123"},
+		}
+
+		return "abc123", recs, nil
+	}
+
+	customerStore.EXPECT().ListCustomers(gomock.Any(), "test", 100).DoAndReturn(callbackFunc)
+
+	cs := Customers{cfg: &flags.API{}, customerStore: customerStore}
+
+	e := echo.New()
+
+	req := httptest.NewRequest(http.MethodGet, "/customers", nil)
+	req = req.WithContext(logger.NewLoggerWithContext(context.TODO()))
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	err := cs.Customers(c, customersapi.CustomersParams{
+		NextToken: aws.String("test"),
+		MaxItems:  aws.Int(100),
+	})
+	assert.NoError(err)
+	assert.Equal(http.StatusOK, rec.Code)
+
+	cust := new(customersapi.CustomersPage)
+	err = json.Unmarshal(rec.Body.Bytes(), cust)
+	assert.NoError(err)
+	assert.Len(cust.Customers, 1)
 
 }

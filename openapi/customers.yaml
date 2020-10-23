@@ -223,3 +223,5 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Customer'
+        nextToken:
+          type: string

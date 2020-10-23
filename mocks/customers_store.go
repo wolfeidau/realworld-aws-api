@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	proto "github.com/golang/protobuf/proto"
+	stores "github.com/wolfeidau/realworld-aws-api/internal/stores"
 	reflect "reflect"
 )
 
@@ -62,4 +63,20 @@ func (m *MockCustomers) GetCustomer(arg0 context.Context, arg1 string, arg2 prot
 func (mr *MockCustomersMockRecorder) GetCustomer(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCustomer", reflect.TypeOf((*MockCustomers)(nil).GetCustomer), arg0, arg1, arg2)
+}
+
+// ListCustomers mocks base method
+func (m *MockCustomers) ListCustomers(arg0 context.Context, arg1 string, arg2 int) (string, []stores.Record, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCustomers", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].([]stores.Record)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListCustomers indicates an expected call of ListCustomers
+func (mr *MockCustomersMockRecorder) ListCustomers(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCustomers", reflect.TypeOf((*MockCustomers)(nil).ListCustomers), arg0, arg1, arg2)
 }

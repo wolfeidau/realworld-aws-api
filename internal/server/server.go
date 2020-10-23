@@ -2,8 +2,8 @@ package server
 
 import (
 	"net/http"
-	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
@@ -29,7 +29,22 @@ func NewCustomers(cfg *flags.API, customerStore stores.Customers) *Customers {
 // Customers Get a list of customers.
 // (GET /customers)
 func (cs *Customers) Customers(c echo.Context, params customersapi.CustomersParams) error {
-	return c.NoContent(http.StatusNotImplemented)
+
+	ctx := c.Request().Context()
+
+	nextToken, records, err := cs.customerStore.ListCustomers(ctx, aws.StringValue(params.NextToken), aws.IntValue(params.MaxItems))
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("failed to get customer")
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	customersPage, err := toAPICustomersPage(records, nextToken)
+	if err != nil {
+		log.Ctx(ctx).Error().Err(err).Msg("failed to convert customer page")
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusOK, &customersPage)
 }
 
 // NewCustomer Create a customer.
@@ -47,7 +62,7 @@ func (cs *Customers) NewCustomer(c echo.Context) error {
 	}
 
 	id := mustNewID()
-	storedCust := createStorageCustomer(newCust)
+	storedCust := toStorageCustomer(newCust)
 
 	v, err := cs.customerStore.CreateCustomer(ctx, id, newCust.Name, storedCust)
 	if err != nil {
@@ -71,22 +86,21 @@ func (cs *Customers) NewCustomer(c echo.Context) error {
 
 // GetCustomer (GET /customers/{id})
 func (cs *Customers) GetCustomer(c echo.Context, id string) error {
-
-	start := time.Now()
+	ctx := c.Request().Context()
 
 	cust := &storagepb.Customer{}
 
-	v, err := cs.customerStore.GetCustomer(c.Request().Context(), id, cust)
+	_, err := cs.customerStore.GetCustomer(c.Request().Context(), id, cust)
 	if err != nil {
-		return c.JSON(500, map[string]string{"msg": "failed to get customer"})
+		log.Ctx(ctx).Error().Err(err).Msg("failed to get customer")
+		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	apiCust, err := fromStorageCustomer(id, cust)
 	if err != nil {
-		return c.JSON(500, map[string]string{"msg": "failed to get customer"})
+		log.Ctx(ctx).Error().Err(err).Msg("failed to marshal customer")
+		return c.NoContent(http.StatusInternalServerError)
 	}
-
-	log.Ctx(c.Request().Context()).Info().Dur("duration", time.Since(start)).Int64("v", v).Msg("get customer")
 
 	return c.JSON(http.StatusOK, apiCust)
 }

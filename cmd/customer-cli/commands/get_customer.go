@@ -13,6 +13,8 @@ type GetCustomerCmd struct {
 
 func (ccc *GetCustomerCmd) Run(cli *CLIContext) error {
 
+	log.Info().Str("id", ccc.ID).Msg("get a customers from the api")
+
 	res, err := cli.Customers.GetCustomerWithResponse(context.Background(), ccc.ID)
 	if err != nil {
 		return err
@@ -22,9 +24,5 @@ func (ccc *GetCustomerCmd) Run(cli *CLIContext) error {
 		log.Fatal().Str("status", res.Status()).Msg("request failed")
 	}
 
-	log.Info().Fields(map[string]interface{}{
-		"customer": res.JSON200,
-	}).Msg("customer read")
-
-	return nil
+	return cli.writeJson(res.JSON200)
 }
