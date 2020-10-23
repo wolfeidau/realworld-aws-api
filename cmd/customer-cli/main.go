@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/aws/aws-sdk-go/aws"
@@ -20,8 +21,9 @@ var cfg struct {
 	Debug   bool
 	URL     string `help:"The base URL for the API." kong:"required"`
 
-	CreateCustomer commands.NewCustomerCmd `cmd:"new-customer" help:"New Customer."`
-	GetCustomer    commands.GetCustomerCmd `cmd:"get-customer" help:"Read Customer."`
+	CreateCustomer commands.NewCustomerCmd   `cmd:"new-customer" help:"New Customer."`
+	GetCustomer    commands.GetCustomerCmd   `cmd:"get-customer" help:"Read Customer."`
+	ListCustomers  commands.ListCustomersCmd `cmd:"list-customers" help:"Read a list of Customers."`
 }
 
 func main() {
@@ -45,23 +47,6 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to build client")
 	}
 
-	err = cli.Run(&commands.CLIContext{Customers: client})
+	err = cli.Run(&commands.CLIContext{Customers: client, Debug: cfg.Debug, Writer: os.Stdout})
 	cli.FatalIfErrorf(err)
-
-	//log.Info().Msg("get a list of customers from the api")
-	//
-	//// to illustrate a basic client we can call to get a list of customers
-	//res, err := client.CustomersWithResponse(context.Background(), &customersapi.CustomersParams{})
-	//if err != nil {
-	//	log.Fatal().Err(err).Msg("failed to list customers")
-	//}
-	//
-	//if res.StatusCode() != http.StatusOK {
-	//	log.Fatal().Str("status", res.Status()).Msg("request failed")
-	//}
-	//
-	//log.Info().Fields(map[string]interface{}{
-	//	"customerPage": res.JSON200,
-	//}).Msg("customer list result")
-
 }

@@ -54,6 +54,21 @@ func TestDDBCustomers(t *testing.T) {
 		assert.Equal(name, cust.Name)
 	})
 
+	t.Run("list", func(t *testing.T) {
+
+		id, name, labels := "fgh789", "new new get customer", []string{"test"}
+		newCust := newStoreCustomer(name, labels)
+
+		v, err := customers.CreateCustomer(ctx, id, name, newCust)
+		assert.NoError(err)
+		assert.Equal(int64(1), v)
+
+		nextToken, records, err := customers.ListCustomers(ctx, "", 1)
+		assert.NoError(err)
+		assert.NotZero(nextToken)
+		assert.Len(records, 1)
+	})
+
 }
 
 func newStoreCustomer(name string, labels []string) *storagepb.Customer {
