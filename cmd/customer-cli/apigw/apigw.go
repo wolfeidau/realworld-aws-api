@@ -22,7 +22,7 @@ func RequestSigner(awscfg *aws.Config) customersapi.RequestEditorFn {
 
 	return func(ctx context.Context, req *http.Request) error {
 
-		log.Info().Str("host", req.Host).Msg("signing request")
+		log.Ctx(ctx).Info().Str("host", req.Host).Msg("signing request")
 
 		body := bytes.NewReader([]byte{})
 
