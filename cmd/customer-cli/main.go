@@ -1,31 +1,27 @@
 package main
 
 import (
-	"bytes"
-	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"time"
-
-	"github.com/wolfeidau/realworld-aws-api/internal/httplog"
 
 	"github.com/alecthomas/kong"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/wolfeidau/realworld-aws-api/cmd/customer-cli/apigw"
+	"github.com/wolfeidau/realworld-aws-api/cmd/customer-cli/commands"
 	"github.com/wolfeidau/realworld-aws-api/internal/app"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
+	"github.com/wolfeidau/realworld-aws-api/internal/httplog"
+	"github.com/wolfeidau/realworld-aws-api/internal/logger"
 )
 
 var cfg struct {
 	Version kong.VersionFlag
+	Debug   bool
 	URL     string `help:"The base URL for the API." kong:"required"`
 
-	CreateCustomer CreateCustomerCmd `cmd:"create-customer" help:"Create Customer."`
+	CreateCustomer commands.NewCustomerCmd `cmd:"new-customer" help:"New Customer."`
+	GetCustomer    commands.GetCustomerCmd `cmd:"get-customer" help:"Read Customer."`
 }
 
 func main() {
@@ -33,20 +29,23 @@ func main() {
 		kong.Vars{"version": fmt.Sprintf("%s_%s", app.Commit, app.BuildDate)}, // bind a var for version
 	)
 
-	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).With().Stack().Caller().Logger()
+	log.Logger = logger.NewLogger()
 
 	awscfg := new(aws.Config)
 
-	t := &httplog.Transport{}
-	httpClient := &http.Client{Transport: t}
+	httpClient := http.DefaultClient
+
+	if cfg.Debug {
+		httpClient.Transport = &httplog.Transport{}
+	}
 
 	client, err := customersapi.NewClientWithResponses(cfg.URL,
-		customersapi.WithRequestEditorFn(requestSigner(awscfg)), customersapi.WithHTTPClient(httpClient))
+		customersapi.WithRequestEditorFn(apigw.RequestSigner(awscfg)), customersapi.WithHTTPClient(httpClient))
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to build client")
 	}
 
-	err = cli.Run(&CLIContext{customers: client})
+	err = cli.Run(&commands.CLIContext{Customers: client})
 	cli.FatalIfErrorf(err)
 
 	//log.Info().Msg("get a list of customers from the api")
@@ -65,36 +64,4 @@ func main() {
 	//	"customerPage": res.JSON200,
 	//}).Msg("customer list result")
 
-}
-
-func requestSigner(awscfg *aws.Config) customersapi.RequestEditorFn {
-
-	sess := session.Must(session.NewSession(awscfg))
-
-	signer := v4.NewSigner(sess.Config.Credentials)
-
-	return func(ctx context.Context, req *http.Request) error {
-
-		log.Info().Str("host", req.Host).Msg("signing request")
-
-		body := bytes.NewReader([]byte{})
-
-		if req.Body != nil {
-
-			d, err := ioutil.ReadAll(req.Body)
-			if err != nil {
-				return err
-			}
-			req.Body = ioutil.NopCloser(bytes.NewReader(d))
-
-			body = bytes.NewReader(d)
-		}
-
-		_, err := signer.Sign(req, body, "execute-api", aws.StringValue(sess.Config.Region), time.Now())
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
 }

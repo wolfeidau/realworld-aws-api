@@ -35,18 +35,18 @@ func (m *MockCustomers) EXPECT() *MockCustomersMockRecorder {
 }
 
 // CreateCustomer mocks base method
-func (m *MockCustomers) CreateCustomer(arg0 context.Context, arg1 string, arg2 proto.Message) (int64, error) {
+func (m *MockCustomers) CreateCustomer(arg0 context.Context, arg1, arg2 string, arg3 proto.Message) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateCustomer", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "CreateCustomer", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateCustomer indicates an expected call of CreateCustomer
-func (mr *MockCustomersMockRecorder) CreateCustomer(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockCustomersMockRecorder) CreateCustomer(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCustomer", reflect.TypeOf((*MockCustomers)(nil).CreateCustomer), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCustomer", reflect.TypeOf((*MockCustomers)(nil).CreateCustomer), arg0, arg1, arg2, arg3)
 }
 
 // GetCustomer mocks base method
