@@ -14,7 +14,7 @@ type CLIContext struct {
 	Debug     bool
 }
 
-func (cc *CLIContext) writeJson(v interface{}) error {
+func (cc *CLIContext) writeJSON(v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return err

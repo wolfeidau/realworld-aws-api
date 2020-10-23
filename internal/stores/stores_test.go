@@ -40,7 +40,6 @@ func TestMain(m *testing.M) {
 
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	if err := pool.Retry(func() error {
-
 		dbSvc = dynamodb.New(session.Must(session.NewSession(mustConfig(endpoint))))
 
 		_, err := dbSvc.ListTables(&dynamodb.ListTablesInput{})
@@ -65,7 +64,6 @@ func TestMain(m *testing.M) {
 }
 
 func mustConfig(endpoint string) *aws.Config {
-
 	creds := credentials.NewStaticCredentials("123", "test", "test")
 	return &aws.Config{
 		Region:      aws.String(defaultRegion),
@@ -75,7 +73,6 @@ func mustConfig(endpoint string) *aws.Config {
 }
 
 func ensureVersionTable(dbSvc dynamodbiface.DynamoDBAPI, tableName string) error {
-
 	_, err := dbSvc.CreateTable(&dynamodb.CreateTableInput{
 		TableName: aws.String(tableName),
 		KeySchema: []*dynamodb.KeySchemaElement{
@@ -98,8 +95,7 @@ func ensureVersionTable(dbSvc dynamodbiface.DynamoDBAPI, tableName string) error
 
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case dynamodb.ErrCodeResourceInUseException:
+			if aerr.Code() == dynamodb.ErrCodeResourceInUseException {
 				return nil
 			}
 		}

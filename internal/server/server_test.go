@@ -11,16 +11,14 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-
-	"github.com/wolfeidau/realworld-aws-api/internal/stores"
-
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
 	"github.com/wolfeidau/realworld-aws-api/internal/flags"
 	"github.com/wolfeidau/realworld-aws-api/internal/logger"
+	"github.com/wolfeidau/realworld-aws-api/internal/stores"
 	"github.com/wolfeidau/realworld-aws-api/mocks"
 )
 
@@ -53,7 +51,6 @@ func TestCustomers_NewCustomer(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal("test", cust.Name)
 	assert.Equal([]string{"test"}, cust.Labels)
-
 }
 
 func TestCustomers_GetCustomer(t *testing.T) {
@@ -123,15 +120,17 @@ func TestCustomers_Customers(t *testing.T) {
 
 	customerStore := mocks.NewMockCustomers(ctrl)
 
+	id := "cde456"
+
 	callbackFunc := func(ctx context.Context, next string, limit int) (string, []stores.Record, error) {
 		data, err := base64.StdEncoding.DecodeString("CgR0ZXN0EgYKBHRlc3QaBHRlc3QiCwiah8f8BRDG++FzKgsImofH/AUQ/4Dicw==")
 		assert.NoError(err)
 
 		recs := []stores.Record{
-			{Data: data, Version: 1, ID: "abc123"},
+			{Data: data, Version: 1, ID: id},
 		}
 
-		return "abc123", recs, nil
+		return id, recs, nil
 	}
 
 	customerStore.EXPECT().ListCustomers(gomock.Any(), "test", 100).DoAndReturn(callbackFunc)
@@ -156,5 +155,4 @@ func TestCustomers_Customers(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), cust)
 	assert.NoError(err)
 	assert.Len(cust.Customers, 1)
-
 }

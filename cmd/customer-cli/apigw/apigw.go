@@ -15,19 +15,16 @@ import (
 )
 
 func RequestSigner(awscfg *aws.Config) customersapi.RequestEditorFn {
-
 	sess := session.Must(session.NewSession(awscfg))
 
 	signer := v4.NewSigner(sess.Config.Credentials)
 
 	return func(ctx context.Context, req *http.Request) error {
-
 		log.Ctx(ctx).Info().Str("host", req.Host).Msg("signing request")
 
 		body := bytes.NewReader([]byte{})
 
 		if req.Body != nil {
-
 			d, err := ioutil.ReadAll(req.Body)
 			if err != nil {
 				return err

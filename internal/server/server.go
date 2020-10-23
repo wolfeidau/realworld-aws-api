@@ -29,7 +29,6 @@ func NewCustomers(cfg *flags.API, customerStore stores.Customers) *Customers {
 // Customers Get a list of customers.
 // (GET /customers)
 func (cs *Customers) Customers(c echo.Context, params customersapi.CustomersParams) error {
-
 	ctx := c.Request().Context()
 
 	nextToken, records, err := cs.customerStore.ListCustomers(ctx, aws.StringValue(params.NextToken), aws.IntValue(params.MaxItems))
@@ -50,7 +49,6 @@ func (cs *Customers) Customers(c echo.Context, params customersapi.CustomersPara
 // NewCustomer Create a customer.
 // (POST /customers)
 func (cs *Customers) NewCustomer(c echo.Context) error {
-
 	ctx := c.Request().Context()
 
 	newCust := new(customersapi.NewCustomer)

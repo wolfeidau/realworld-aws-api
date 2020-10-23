@@ -231,3 +231,5 @@ Outputs:
     Value: !Ref ApplicationsApi
   ApiAccessLogGroupName:
     Value: !Ref ApiAccessLogGroup
+  ApiURL:
+    Value: !Sub "https://${ApplicationsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

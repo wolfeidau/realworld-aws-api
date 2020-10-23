@@ -9,7 +9,6 @@ require (
 	github.com/aws/aws-sdk-go v1.35.12
 	github.com/deepmap/oapi-codegen v1.3.13
 	github.com/getkin/kin-openapi v0.13.0
-	github.com/gogo/protobuf v1.2.0
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.2.0
 	github.com/labstack/echo/v4 v4.1.17

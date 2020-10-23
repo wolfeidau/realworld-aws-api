@@ -29,7 +29,6 @@ func toStorageCustomer(newCust *customersapi.NewCustomer) *storagepb.Customer {
 }
 
 func fromStorageCustomer(id string, cust *storagepb.Customer) (*customersapi.Customer, error) {
-
 	created, err := ptypes.Timestamp(cust.Created)
 	if err != nil {
 		return nil, err

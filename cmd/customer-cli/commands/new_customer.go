@@ -15,6 +15,7 @@ type NewCustomerCmd struct {
 }
 
 func (ccc *NewCustomerCmd) Run(ctx context.Context, cli *CLIContext) error {
+	log.Ctx(ctx).Info().Str("name", ccc.Name).Msg("create a new customer via the api")
 
 	newCust := customersapi.NewCustomerJSONRequestBody{
 		Description: nil,
@@ -35,5 +36,5 @@ func (ccc *NewCustomerCmd) Run(ctx context.Context, cli *CLIContext) error {
 		log.Ctx(ctx).Fatal().Str("status", res.Status()).Msg("request failed")
 	}
 
-	return cli.writeJson(res.JSON201)
+	return cli.writeJSON(res.JSON201)
 }
