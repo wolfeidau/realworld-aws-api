@@ -1,25 +1,20 @@
-package main
+package commands
 
 import (
 	"context"
 	"net/http"
 
 	"github.com/rs/zerolog/log"
-
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
 )
 
-type CLIContext struct {
-	customers *customersapi.ClientWithResponses
-}
-
-type CreateCustomerCmd struct {
+type NewCustomerCmd struct {
 	Name        string   `kong:"required"`
 	Labels      []string `kong:"required"`
 	Description string
 }
 
-func (ccc *CreateCustomerCmd) Run(cli *CLIContext) error {
+func (ccc *NewCustomerCmd) Run(cli *CLIContext) error {
 
 	newCust := customersapi.NewCustomerJSONRequestBody{
 		Description: nil,
@@ -31,7 +26,7 @@ func (ccc *CreateCustomerCmd) Run(cli *CLIContext) error {
 		newCust.Description = &ccc.Description
 	}
 
-	res, err := cli.customers.NewCustomerWithResponse(context.Background(), newCust)
+	res, err := cli.Customers.NewCustomerWithResponse(context.Background(), newCust)
 	if err != nil {
 		return err
 	}

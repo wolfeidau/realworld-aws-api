@@ -33,6 +33,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Customer'
+        '409':
+          description: customer name already exists response
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
@@ -148,15 +150,16 @@ components:
       x-amazon-apigateway-authtype: awsSigv4
   schemas:
     NewCustomer:
-      description: New Customer request.
+      description: New Customer.
       required:
         - name
         - labels
       properties:
         name:
           type: string
-          description: The name of the customer.
+          description: The name of the customer, this must be unique.
           example: New Customer
+          minLength: 3
         description:
           type: string
           description:

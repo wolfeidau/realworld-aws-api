@@ -11,14 +11,17 @@ import (
 
 type Customers interface {
 	GetCustomer(ctx context.Context, id string, into proto.Message) (int64, error)
-	CreateCustomer(ctx context.Context, id string, obj proto.Message) (int64, error)
+	CreateCustomer(ctx context.Context, id, name string, obj proto.Message) (int64, error)
 }
 
 func NewCustomers(awsconfig *aws.Config, cfg *flags.API) Customers {
 
 	session := dynastore.New(awsconfig)
 
+	tbl := session.Table(cfg.CustomersTable)
+
 	return &DDBCustomers{
-		session.Table(cfg.CustomersTable).Partition("customers"),
+		customerPart:      tbl.Partition(customersPartitionName),
+		customerNamesPart: tbl.Partition(customerNamesPartitionName),
 	}
 }
