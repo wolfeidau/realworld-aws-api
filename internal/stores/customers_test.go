@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wolfeidau/realworld-aws-api/internal/flags"
 	"github.com/wolfeidau/realworld-aws-api/internal/logger"
+	"github.com/wolfeidau/realworld-aws-api/internal/migrate"
 	storagepb "github.com/wolfeidau/realworld-aws-api/proto/customers/storage/v1beta1"
 )
 
 func TestDDBCustomers(t *testing.T) {
 	assert := require.New(t)
 
-	err := ensureVersionTable(dbSvc, "customers-test-table")
+	err := migrate.EnsureTable(dbSvc, "customers-test-table")
 	assert.NoError(err)
 
 	awscfg := mustConfig(endpoint)
@@ -33,7 +34,7 @@ func TestDDBCustomers(t *testing.T) {
 
 		// should conflict
 		v, err = customers.CreateCustomer(ctx, id, name, cust)
-		assert.Equal(ErrCustomerNameConfict, err)
+		assert.Equal(ErrCustomerNameConflict, err)
 		assert.Equal(int64(0), v)
 	})
 

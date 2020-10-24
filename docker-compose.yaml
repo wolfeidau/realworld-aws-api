@@ -1,0 +1,22 @@
+version: "2"
+services:
+  app:
+    image: golang:latest
+    volumes:
+      - .:/src
+    working_dir: /src
+    command: make watch
+    environment:
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_REGION=us-east-1
+      - CUSTOMERS_TABLE=customers-test
+      - DYNAMODB_ENDPOINT=http://dynamodb:8000
+      - BIN_DIR=/go/bin
+    ports:
+      - "3000:3000"
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
