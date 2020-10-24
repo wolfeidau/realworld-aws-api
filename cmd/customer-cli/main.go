@@ -18,9 +18,10 @@ import (
 )
 
 var cfg struct {
-	Version kong.VersionFlag
-	Debug   bool
-	URL     string `help:"The base URL for the API." kong:"required"`
+	Version        kong.VersionFlag
+	Debug          bool
+	DisableSigning bool
+	URL            string `help:"The base URL for the API." kong:"required"`
 
 	CreateCustomer commands.NewCustomerCmd   `cmd:"new-customer" help:"New Customer."`
 	GetCustomer    commands.GetCustomerCmd   `cmd:"get-customer" help:"Read Customer."`
@@ -43,8 +44,15 @@ func main() {
 		httpClient.Transport = &httplog.Transport{}
 	}
 
+	requestSigningFn := apigw.RequestSigner(awscfg)
+
+	if cfg.DisableSigning {
+		log.Ctx(ctx).Warn().Msg("disabling request signing")
+		requestSigningFn = nil
+	}
+
 	client, err := customersapi.NewClientWithResponses(cfg.URL,
-		customersapi.WithRequestEditorFn(apigw.RequestSigner(awscfg)), customersapi.WithHTTPClient(httpClient))
+		customersapi.WithRequestEditorFn(requestSigningFn), customersapi.WithHTTPClient(httpClient))
 	if err != nil {
 		log.Ctx(ctx).Fatal().Err(err).Msg("failed to build client")
 	}

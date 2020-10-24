@@ -64,7 +64,7 @@ func (cs *Customers) NewCustomer(c echo.Context) error {
 
 	v, err := cs.customerStore.CreateCustomer(ctx, id, newCust.Name, storedCust)
 	if err != nil {
-		if err == stores.ErrCustomerNameConfict {
+		if err == stores.ErrCustomerNameConflict {
 			return c.NoContent(http.StatusConflict)
 		}
 		log.Ctx(ctx).Error().Err(err).Msg("failed to store new customer")

@@ -4,10 +4,10 @@ This project illustrates how to build an API in [Amazon Web Services (AWS)](http
 
 # Goals
 
-The main goal of this project is to illustrate how to build a maintainable real world REST API hosted in lambda using Go. To enable this I have added examples of:
+The main goal of this project is to illustrate how to build a maintainable real world REST API hosted in AWS using Go. To enable this I have added examples of:
 
 * Contract first [OpenAPI](https://swagger.io/specification/) using code generation
-* Validation of inputs in both API Gateway and the server
+* Support running in [Lambda](https://aws.amazon.com/lambda/) with [Amazon API Gateway](https://aws.amazon.com/api-gateway/) with validation of inputs
 * Logging with meta data including lambda request identifiers
 * Provide an [API Gateway](https://aws.amazon.com/api-gateway/) client using [sigv4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) with Go.
 * Protobuf based versioned storage using [DynamoDB](https://aws.amazon.com/dynamodb/)
@@ -45,7 +45,7 @@ Run "customer-cli <command> --help" for more information on a command.
 
 Reading a list of customers from the API.
 
-```console
+```
 $ customer-cli --url=https://xxxxxxxxxx.execute-api.us-west-2.amazonaws.com/Prod list-customers  | jq .
 6:33PM INF cmd/customer-cli/commands/list_customers.go:18 > get a list of customers from the api
 6:33PM INF cmd/customer-cli/apigw/apigw.go:25 > signing request host=xxxxxxxxxx.execute-api.us-west-2.amazonaws.com
@@ -112,7 +112,7 @@ make
 To invoke a simple API which is authenticated using [sigv4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html) I have included a generated client, to use this you will need `AWS_REGION` and `AWS_PROFILE` exported as environment variables.
 
 ```
-go run cmd/customer-cli/main.go --url=https://xxxxxxxxxx.execute-api.us-west-2.amazonaws.com/Prod
+go run cmd/customer-cli/main.go --url=https://xxxxxxxxxx.execute-api.us-west-2.amazonaws.com/Prod list-customers
 ```
 
 # Libraries
@@ -124,10 +124,27 @@ go run cmd/customer-cli/main.go --url=https://xxxxxxxxxx.execute-api.us-west-2.a
 * [github.com/labstack/echo/v4](https://github.com/labstack/echo/v4)
 * [github.com/wolfeidau/dynastore](https://github.com/wolfeidau/dynastore)
 
-# TODO
+# Development
 
-* Add the ability to run the lambda service locally without the need for SAM, this is mainly to enable compile on change for local development
+To enable fast iteration on changes I have included a local development server version of the API, this runs in [docker-compose](https://docs.docker.com/compose/) and uses a bit of mock data, along with DynamoDB Local and file change watching to provide a realtime development experience.
 
+To use this feature run.
+
+```
+make docker-compose
+```
+
+Then load up the openapi in postman, or hit the service curl as follows.
+
+```
+curl -v http://localhost:3000/customers | jq .
+```
+
+Or using the CLI with `--disable-signing` to avoid including sigv4 signatures.
+
+```
+go run cmd/customer-cli/main.go --url http://localhost:3000 --disable-signing list-customers | jq .
+```
 
 # License
 

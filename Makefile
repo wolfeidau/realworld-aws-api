@@ -7,6 +7,10 @@ GOLANGCI_VERSION = 1.31.0
 GIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u '+%Y%m%dT%H%M%S')
 
+# This path is used to cache binaries used for development and can be overridden to avoid issues with osx vs linux
+# binaries.
+BIN_DIR ?= $(shell pwd)/bin
+
 default: clean generate build archive package deploy
 
 ci: clean generate lint test
@@ -14,24 +18,27 @@ ci: clean generate lint test
 
 LDFLAGS := -ldflags="-s -w -X github.com/wolfeidau/realworld-aws-api/internal/app.BuildDate=${BUILD_DATE} -X github.com/wolfeidau/realworld-aws-api/internal/app.Commit=${GIT_HASH}"
 
-bin/golangci-lint: bin/golangci-lint-${GOLANGCI_VERSION}
-	@ln -sf golangci-lint-${GOLANGCI_VERSION} bin/golangci-lint
-bin/golangci-lint-${GOLANGCI_VERSION}:
+$(BIN_DIR)/golangci-lint: $(BIN_DIR)/golangci-lint-${GOLANGCI_VERSION}
+	@ln -sf golangci-lint-${GOLANGCI_VERSION} $(BIN_DIR)/golangci-lint
+$(BIN_DIR)/golangci-lint-${GOLANGCI_VERSION}:
 	@curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | BINARY=golangci-lint bash -s -- v${GOLANGCI_VERSION}
-	@mv bin/golangci-lint $@
+	@mv $(BIN_DIR)/golangci-lint $@
 
-bin/mockgen:
-	@env GOBIN=$$PWD/bin GO111MODULE=on go install github.com/golang/mock/mockgen
+$(BIN_DIR)/mockgen:
+	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/golang/mock/mockgen
 
-bin/gcov2lcov:
-	@env GOBIN=$$PWD/bin GO111MODULE=on go install github.com/jandelgado/gcov2lcov
+$(BIN_DIR)/gcov2lcov:
+	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/jandelgado/gcov2lcov
 
-bin/protoc-gen-go:
-	@env GOBIN=$$PWD/bin GO111MODULE=on go install github.com/golang/protobuf/protoc-gen-go
+$(BIN_DIR)/protoc-gen-go:
+	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/golang/protobuf/protoc-gen-go
 
-mocks: bin/mockgen
+$(BIN_DIR)/reflex:
+	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/cespare/reflex
+
+mocks: $(BIN_DIR)/mockgen
 	@echo "--- build all the mocks"
-	@bin/mockgen -destination=mocks/customers_store.go -package=mocks github.com/wolfeidau/realworld-aws-api/internal/stores Customers
+	@$(BIN_DIR)/mockgen -destination=mocks/customers_store.go -package=mocks github.com/wolfeidau/realworld-aws-api/internal/stores Customers
 .PHONY: mocks
 
 clean:
@@ -41,15 +48,15 @@ clean:
 	@rm -f ./*.out.yaml
 .PHONY: clean
 
-lint: bin/golangci-lint
+lint: $(BIN_DIR)/golangci-lint
 	@echo "--- lint all the things"
-	@bin/golangci-lint run
+	@$(BIN_DIR)/golangci-lint run
 .PHONY: lint
 
-test: bin/gcov2lcov
+test: $(BIN_DIR)/gcov2lcov
 	@echo "--- test all the things"
 	@go test -v -covermode=count -coverprofile=coverage.txt ./internal/...
-	@bin/gcov2lcov -infile=coverage.txt -outfile=coverage.lcov
+	@$(BIN_DIR)/gcov2lcov -infile=coverage.txt -outfile=coverage.lcov
 .PHONY: test
 
 generate:
@@ -60,7 +67,7 @@ generate:
 proto: proto/customers/storage/v1beta1/storage.pb.go
 
 proto/customers/storage/v1beta1/storage.pb.go: proto/customers/storage/v1beta1/storage.proto
-	protoc -I proto --go_out=paths=source_relative:proto --plugin=bin/protoc-gen-go proto/customers/storage/v1beta1/storage.proto
+	protoc -I proto --go_out=paths=source_relative:proto --plugin=$(BIN_DIR)/protoc-gen-go proto/customers/storage/v1beta1/storage.proto
 
 build:
 	@echo "--- build all the things"
@@ -91,3 +98,13 @@ deploy:
 		--stack-name $(APPNAME)-$(STAGE)-$(BRANCH) \
 		--parameter-overrides AppName=$(APPNAME) Stage=$(STAGE) Branch=$(BRANCH)
 .PHONY: deploy
+
+watch: $(BIN_DIR)/reflex
+	@echo "-- watch for changes and run local server"
+	@$(BIN_DIR)/reflex -s -r '\.go$$' go run cmd/api-server/main.go
+.PHONY: deploy
+
+docker-compose:
+	@echo "-- run docker-compose in the foreground for local development"
+	@docker-compose up
+.PHONY: docker-compose

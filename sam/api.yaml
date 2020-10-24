@@ -232,6 +232,14 @@ Resources:
       Value: !Ref ApiAccessLogGroup
       Description: "ApplicationsApi access log CloudWatch log group name"
 
+  CustomersTableName:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub "/config/${AppName}/${Stage}/${Branch}/CustomersTable/Name"
+      Type: "String"
+      Value: !Ref CustomersTable
+      Description: "Customers DynamoDB table name"
+
 Outputs:
   ApiLambdaArn:
     Value: !Ref ApiLambda
