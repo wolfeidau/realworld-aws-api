@@ -3,13 +3,11 @@ package main
 import (
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-
-	"github.com/labstack/echo/v4"
-
 	"github.com/alecthomas/kong"
 	"github.com/apex/gateway"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	lmw "github.com/wolfeidau/lambda-go-extras/middleware"
 	"github.com/wolfeidau/lambda-go-extras/middleware/raw"

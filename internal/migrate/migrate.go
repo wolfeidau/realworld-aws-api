@@ -9,7 +9,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Migrate(awscfg *aws.Config, tableName string) error {
+// Table migrate a table
+func Table(awscfg *aws.Config, tableName string) error {
 	log.Info().Msg("run migrations")
 
 	dbSvc := dynamodb.New(session.Must(session.NewSession(awscfg)))
@@ -17,6 +18,7 @@ func Migrate(awscfg *aws.Config, tableName string) error {
 	return EnsureTable(dbSvc, tableName)
 }
 
+// EnsureTable ensure the table exists
 func EnsureTable(dbSvc dynamodbiface.DynamoDBAPI, tableName string) error {
 	log.Info().Str("tableName", tableName).Msg("run CreateTable")
 
