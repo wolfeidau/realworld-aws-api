@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/ory/dockertest/v3"
 	"github.com/rs/zerolog/log"
+	"github.com/wolfeidau/realworld-aws-api/internal/logger"
 )
 
 const (
@@ -24,6 +25,9 @@ var (
 )
 
 func TestMain(m *testing.M) {
+
+	log.Logger = logger.NewLogger()
+
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		log.Fatal().Msgf("Could not connect to docker: %s", err)

@@ -3,17 +3,14 @@ package main
 import (
 	"fmt"
 
-	"github.com/wolfeidau/realworld-aws-api/internal/migrate"
-
-	"github.com/aws/aws-sdk-go/aws"
-
-	"github.com/labstack/echo/v4"
-
 	"github.com/alecthomas/kong"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/wolfeidau/realworld-aws-api/internal/app"
 	"github.com/wolfeidau/realworld-aws-api/internal/flags"
 	"github.com/wolfeidau/realworld-aws-api/internal/logger"
+	"github.com/wolfeidau/realworld-aws-api/internal/migrate"
 	"github.com/wolfeidau/realworld-aws-api/internal/server"
 )
 
@@ -40,7 +37,7 @@ func main() {
 
 		awscfg.Endpoint = aws.String(cfg.DynamoDBEndpoint)
 
-		err := migrate.Migrate(awscfg, cfg.CustomersTable)
+		err := migrate.Table(awscfg, cfg.CustomersTable)
 		if err != nil {
 			log.Fatal().Err(err).Msg("database migration failed")
 		}
