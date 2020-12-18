@@ -4,13 +4,13 @@ import (
 	"crypto/rand"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/oklog/ulid/v2"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
 	"github.com/wolfeidau/realworld-aws-api/internal/stores"
 	storagepb "github.com/wolfeidau/realworld-aws-api/proto/customers/storage/v1beta1"
+	"google.golang.org/protobuf/proto"
 )
 
 func toStorageCustomer(newCust *customersapi.NewCustomer) *storagepb.Customer {

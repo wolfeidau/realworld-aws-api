@@ -3,22 +3,40 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: >-
   This template creates API Gateway and Lambda resources for the backend service.
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: realworld-aws-api
+    Description: >-
+      This template creates API Gateway and Lambda resources for the backend service.
+    Author: Mark Wolfe
+    SpdxLicenseId: Apache-2.0
+    Labels: [github, serverless, sam, api]
+    HomePageUrl: https://github.com/wolfeidau/realworld-aws-api
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/wolfeidau/realworld-aws-api/tree/1.0.0
+    LicenseUrl: ../LICENSE
+    ReadmeUrl: ../README.md
+
 Parameters:
   AppName:
-      Type: String
+    Type: String
+    Description: The name of the application.
+    Default: "realworld-aws-api"
 
   Stage:
     Type: String
     Description: The stage where the application is running in, e.g., dev, prod.
+    Default: "dev"
   
   Branch:
     Type: String
+    Default: "master"
 
 Globals:
   Function:
     Runtime: go1.x
     Timeout: 30
-    MemorySize: 256
+    MemorySize: 1024
     Environment:
       Variables:
         APP_NAME: !Ref AppName
@@ -79,9 +97,9 @@ Resources:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
         Format: '$context.identity.sourceIp $context.authorizer.claims.sub [$context.requestTime] "$context.httpMethod $context.resourcePath $context.protocol" $context.status $context.requestId $context.awsEndpointRequestId $context.xrayTraceId $context.responseLatency $context.integrationLatency "$context.error.message"'
       OpenApiVersion: '3.0.0'
-      Cors:
-        AllowOrigin: "'*'"
-        AllowHeaders: "'authorization, content-type'"
+      # Cors:
+      #   AllowOrigin: "'*'"
+      #   AllowHeaders: "'authorization, content-type'"
 
   ApiLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -154,7 +172,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: ApiName
-          Value: !Sub realworld-serverless-application-backend-${Stage}
+          Value: !Sub ${AppName}-backend-${Stage}
       EvaluationPeriods: 5
       MetricName: 5XXErrors
       Namespace: AWS/ApiGateway
@@ -170,7 +188,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: ApiName
-          Value: !Sub realworld-serverless-application-backend-${Stage}
+          Value: !Sub ${AppName}-backend-${Stage}
       EvaluationPeriods: 5
       MetricName: 4XXErrors
       Namespace: AWS/ApiGateway
@@ -186,7 +204,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: ApiName
-          Value: !Sub realworld-serverless-application-backend-${Stage}
+          Value: !Sub ${AppName}-backend-${Stage}
       EvaluationPeriods: 5
       MetricName: Latency
       Namespace: AWS/ApiGateway

@@ -12,7 +12,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
@@ -20,6 +19,7 @@ import (
 	"github.com/wolfeidau/realworld-aws-api/internal/logger"
 	"github.com/wolfeidau/realworld-aws-api/internal/stores"
 	"github.com/wolfeidau/realworld-aws-api/mocks"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestCustomers_NewCustomer(t *testing.T) {
