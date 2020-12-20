@@ -1,25 +1,25 @@
-openapi: "3.0.2"
+openapi: 3.0.2
 info:
-  title: "Customers API"
+  title: Customers API
   description: |
     This API provides a simple customer storage service.
-  version: "2020-10-20"
-
-# Enable request validator. See doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-validation-sample-api-swagger.html
+  version: '2020-10-20'
 x-amazon-apigateway-request-validators:
   all:
     validateRequestBody: true
     validateRequestParameters: true
 x-amazon-apigateway-request-validator: all
-
+tags:
+  - name: customer
+    description: Customer related operations.
 paths:
   /customers:
     post:
-      summary: "Create a customer."
-      description: "Create and return a new customer."
+      summary: Create a customer.
+      description: Create and return a new customer.
       operationId: NewCustomer
       tags:
-      - customer
+        - customer
       requestBody:
         required: true
         content:
@@ -33,22 +33,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Customer'
+              examples:
+                example-1:
+                  value:
+                    id: 0123456789ABCDEFGHJKMNPQRSTVWXYZ
+                    name: New Customer
+                    description: The great customer.
+                    labels:
+                      - aws
+                      - consulting
+                    updated_at: '2019-08-24T14:15:22Z'
+                    created_at: '2019-08-24T14:15:22Z'
         '409':
           description: customer name already exists response
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+          'Fn::Sub': 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations'
         httpMethod: POST
         type: aws_proxy
         passthroughBehavior: never
       security:
-      - sigv4: []
+        - sigv4: []
     get:
-      summary: "Get a list of customers."
+      summary: Get a list of customers.
       operationId: Customers
-      description: "Return a list of customers."
+      description: Return a list of customers.
       tags:
-      - customer
+        - customer
       parameters:
         - name: nextToken
           in: query
@@ -69,22 +80,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomersPage'
+              examples:
+                example-1:
+                  value:
+                    customers:
+                      - id: 0123456789ABCDEFGHJKMNPQRSTVWXYZ
+                        name: New Customer
+                        description: The great customer.
+                        labels:
+                          - aws
+                          - consulting
+                        updated_at: '2019-08-24T14:15:22Z'
+                        created_at: '2019-08-24T14:15:22Z'
+                    nextToken: string
         '404':
           description: customer not found
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+          'Fn::Sub': 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations'
         httpMethod: POST
         type: aws_proxy
         passthroughBehavior: never
       security:
-      - sigv4: []
-  /customers/{id}:
+        - sigv4: []
+  '/customers/{id}':
     get:
       operationId: GetCustomer
       description: Returns a customer based on it's identifier.
       tags:
-      - customer
+        - customer
       parameters:
         - name: id
           in: path
@@ -99,22 +123,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Customer'
+              examples:
+                example-1:
+                  value:
+                    id: 0123456789ABCDEFGHJKMNPQRSTVWXYZ
+                    name: New Customer
+                    description: The great customer.
+                    labels:
+                      - aws
+                      - consulting
+                    updated_at: '2019-08-24T14:15:22Z'
+                    created_at: '2019-08-24T14:15:22Z'
         '404':
           description: The customer does not exists.
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+          'Fn::Sub': 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations'
         httpMethod: POST
         type: aws_proxy
         passthroughBehavior: never
       security:
-      - sigv4: []
+        - sigv4: []
     put:
-      summary: "Update a customer."
+      summary: Update a customer.
       operationId: UpdateCustomer
-      description: "Update and return a customer."
+      description: Update and return a customer.
       tags:
-      - customer
+        - customer
       parameters:
         - name: id
           in: path
@@ -135,14 +170,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Customer'
+              examples:
+                example-1:
+                  value:
+                    id: 0123456789ABCDEFGHJKMNPQRSTVWXYZ
+                    name: New Customer
+                    description: string
+                    labels:
+                      - string
+                    updated_at: '2019-08-24T14:15:22Z'
+                    created_at: '2019-08-24T14:15:22Z'
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations
+          'Fn::Sub': 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}:live/invocations'
         httpMethod: POST
         type: aws_proxy
         passthroughBehavior: never
       security:
-      - sigv4: []
+        - sigv4: []
 components:
   securitySchemes:
     sigv4:
@@ -159,13 +204,12 @@ components:
       properties:
         name:
           type: string
-          description: The name of the customer, this must be unique.
+          description: 'The name of the customer, this must be unique.'
           example: New Customer
           minLength: 3
         description:
           type: string
-          description:
-            A description of the customer, with some background.
+          description: 'A description of the customer, with some background.'
         labels:
           type: array
           description: Labels assigned to an entity.
@@ -176,7 +220,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/NewCustomer'
         - required:
-          - version
+            - version
           properties:
             version:
               type: integer
@@ -201,8 +245,7 @@ components:
           example: New Customer
         description:
           type: string
-          description:
-            A description of the customer, with some background.
+          description: 'A description of the customer, with some background.'
         labels:
           type: array
           description: Labels assigned to an entity.

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/rs/zerolog/log"
 	"github.com/wolfeidau/dynastore"
+	"google.golang.org/protobuf/proto"
 )
 
 const (

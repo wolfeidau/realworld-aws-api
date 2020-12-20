@@ -1,6 +1,7 @@
 APPNAME := realworld-aws-api
 STAGE ?= dev
 BRANCH ?= master
+SAR_VERSION ?= 1.0.0
 
 GOLANGCI_VERSION = 1.31.0
 
@@ -11,7 +12,7 @@ BUILD_DATE := $(shell date -u '+%Y%m%dT%H%M%S')
 # binaries.
 BIN_DIR ?= $(shell pwd)/bin
 
-default: clean generate build archive package deploy
+default: clean generate build archive deploy-bucket package deploy
 
 ci: clean generate lint test
 .PHONY: ci
@@ -53,6 +54,11 @@ lint: $(BIN_DIR)/golangci-lint
 	@$(BIN_DIR)/golangci-lint run
 .PHONY: lint
 
+lint-fix: $(BIN_DIR)/golangci-lint
+	@echo "--- lint all the things"
+	@$(BIN_DIR)/golangci-lint run --fix
+.PHONY: lint-fix
+
 test: $(BIN_DIR)/gcov2lcov
 	@echo "--- test all the things"
 	@go test -v -covermode=count -coverprofile=coverage.txt ./internal/...
@@ -64,7 +70,7 @@ generate:
 	@go generate ./...
 .PHONY: generate
 
-proto: proto/customers/storage/v1beta1/storage.pb.go
+proto: $(BIN_DIR)/protoc-gen-go proto/customers/storage/v1beta1/storage.pb.go
 
 proto/customers/storage/v1beta1/storage.pb.go: proto/customers/storage/v1beta1/storage.proto
 	protoc -I proto --go_out=paths=source_relative:proto --plugin=$(BIN_DIR)/protoc-gen-go proto/customers/storage/v1beta1/storage.proto
@@ -80,21 +86,42 @@ archive:
 	@cd dist && zip -X -9 -r ../handler.zip *-lambda
 .PHONY: archive
 
+deploy-bucket:
+	@sam deploy \
+		--no-fail-on-empty-changeset \
+		--template-file sam/deploy.yaml \
+		--capabilities CAPABILITY_IAM \
+		--stack-name $(APPNAME)-$(STAGE)-$(BRANCH)-deploybucket \
+		--tags "environment=$(STAGE)" "branch=$(BRANCH)" "service=$(APPNAME)" \
+		--parameter-overrides \
+			AppName=$(APPNAME) \
+			Stage=$(STAGE) \
+			Branch=$(BRANCH)
+.PHONY: deploy-bucket
+
 package:
 	@echo "--- uploading cloudformation assets to $(S3_BUCKET)"
-	@aws cloudformation package \
+	@sam package \
 		--template-file sam/api.yaml \
 		--output-template-file api.out.yaml \
-		--s3-bucket $(S3_BUCKET) \
-		--s3-prefix sam
+		--s3-bucket $(shell aws ssm get-parameter --name "/config/$(STAGE)/$(BRANCH)/$(APPNAME)/deploy_bucket" --query 'Parameter.Value' --output text) \
+		--s3-prefix sam/$(GIT_HASH)
 .PHONY: package
+
+publish:
+	@echo "--- publish stack $(APPNAME)-$(STAGE)-$(BRANCH)"
+	@sam publish \
+		--template-file api.out.yaml \
+		--semantic-version $(SAR_VERSION)
+.PHONY: publish
 
 deploy:
 	@echo "--- deploy stack $(APPNAME)-$(STAGE)-$(BRANCH)"
-	@aws cloudformation deploy \
+	@sam deploy \
 		--no-fail-on-empty-changeset \
 		--template-file api.out.yaml \
 		--capabilities CAPABILITY_IAM \
+		--tags "environment=$(STAGE)" "branch=$(BRANCH)" "service=$(APPNAME)" \
 		--stack-name $(APPNAME)-$(STAGE)-$(BRANCH) \
 		--parameter-overrides AppName=$(APPNAME) Stage=$(STAGE) Branch=$(BRANCH)
 .PHONY: deploy

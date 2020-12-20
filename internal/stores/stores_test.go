@@ -25,7 +25,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-
 	log.Logger = logger.NewLogger()
 
 	pool, err := dockertest.NewPool("")

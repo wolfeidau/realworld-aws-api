@@ -1,0 +1,35 @@
+extends: spectral:oas
+rules:
+  date-based-version:
+    severity: error
+    recommended: true
+    message: Specs should follow inception date based versioning eg. 2020-01-01. {{value}} is not a valid version.
+    given: $.info.version
+    then:
+      function: pattern
+      functionOptions:
+        match: "^([0-9]{4}-[0-9]{2}-[0-9]{2})$"
+  oas3-operation-security-defined: error
+  oas3-operation-security-sigv4:
+    description: Please provide a sigv4 for securitySchemes.
+    severity: error
+    given: $..components.securitySchemes
+    then:
+      field: sigv4
+      function: truthy
+  oas3-operation-security-sigv4-authtype:
+    description: Please provide a x-amazon-apigateway-authtype for sigv4 in securitySchemes.
+    severity: error
+    given: $..components.securitySchemes.sigv4
+    then:
+      field: x-amazon-apigateway-authtype
+      function: truthy
+  sigv4:
+    severity: error
+    recommended: true
+    message: Specs should enable awsSigv4 in securitySchemes.sigv4. {{value}} is not a valid version.
+    given: $..components.securitySchemes.sigv4.x-amazon-apigateway-authtype
+    then:
+      function: pattern
+      functionOptions:
+        match: "^awsSigv4$"

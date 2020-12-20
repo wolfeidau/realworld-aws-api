@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/golang/protobuf/proto"
 	"github.com/wolfeidau/dynastore"
 	"github.com/wolfeidau/realworld-aws-api/internal/flags"
+	"google.golang.org/protobuf/proto"
 )
 
 // Record used to return raw record data

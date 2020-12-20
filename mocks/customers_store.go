@@ -7,8 +7,8 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	proto "github.com/golang/protobuf/proto"
 	stores "github.com/wolfeidau/realworld-aws-api/internal/stores"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	reflect "reflect"
 )
 
@@ -36,7 +36,7 @@ func (m *MockCustomers) EXPECT() *MockCustomersMockRecorder {
 }
 
 // CreateCustomer mocks base method
-func (m *MockCustomers) CreateCustomer(arg0 context.Context, arg1, arg2 string, arg3 proto.Message) (int64, error) {
+func (m *MockCustomers) CreateCustomer(arg0 context.Context, arg1, arg2 string, arg3 protoreflect.ProtoMessage) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateCustomer", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(int64)
@@ -51,7 +51,7 @@ func (mr *MockCustomersMockRecorder) CreateCustomer(arg0, arg1, arg2, arg3 inter
 }
 
 // GetCustomer mocks base method
-func (m *MockCustomers) GetCustomer(arg0 context.Context, arg1 string, arg2 proto.Message) (int64, error) {
+func (m *MockCustomers) GetCustomer(arg0 context.Context, arg1 string, arg2 protoreflect.ProtoMessage) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCustomer", arg0, arg1, arg2)
 	ret0, _ := ret[0].(int64)
