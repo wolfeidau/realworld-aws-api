@@ -3,7 +3,7 @@ STAGE ?= dev
 BRANCH ?= master
 SAR_VERSION ?= 1.0.0
 
-GOLANGCI_VERSION = 1.31.0
+GOLANGCI_VERSION = 1.34.0
 
 GIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u '+%Y%m%dT%H%M%S')
@@ -26,15 +26,19 @@ $(BIN_DIR)/golangci-lint-${GOLANGCI_VERSION}:
 	@mv $(BIN_DIR)/golangci-lint $@
 
 $(BIN_DIR)/mockgen:
+	@go get github.com/golang/mock/mockgen
 	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/golang/mock/mockgen
 
 $(BIN_DIR)/gcov2lcov:
+	@go get github.com/jandelgado/gcov2lcov
 	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/jandelgado/gcov2lcov
 
 $(BIN_DIR)/protoc-gen-go:
+	@go get github.com/golang/protobuf/protoc-gen-go
 	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/golang/protobuf/protoc-gen-go
 
 $(BIN_DIR)/reflex:
+	@go get github.com/cespare/reflex
 	@env GOBIN=$(BIN_DIR) GO111MODULE=on go install github.com/cespare/reflex
 
 mocks: $(BIN_DIR)/mockgen
