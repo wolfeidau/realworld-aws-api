@@ -57,11 +57,36 @@ Resources:
           AttributeType: S
         - AttributeName: name
           AttributeType: S
+        - AttributeName: created
+          AttributeType: S
+        - AttributeName: pk1
+          AttributeType: S
+        - AttributeName: sk1
+          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
         - AttributeName: name
           KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: idx_created
+          KeySchema:
+            - AttributeName: created
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      GlobalSecondaryIndexes:
+        - IndexName: idx_global_1
+          KeySchema:
+            - AttributeName: pk1
+              KeyType: HASH
+            - AttributeName: sk1
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
       TimeToLiveSpecification:
         AttributeName: expires
         Enabled: true
