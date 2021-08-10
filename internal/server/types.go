@@ -4,21 +4,21 @@ import (
 	"crypto/rand"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/oklog/ulid/v2"
 	"github.com/wolfeidau/realworld-aws-api/internal/customersapi"
 	"github.com/wolfeidau/realworld-aws-api/internal/stores"
 	storagepb "github.com/wolfeidau/realworld-aws-api/proto/customers/storage/v1beta1"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func toStorageCustomer(newCust *customersapi.NewCustomer) *storagepb.Customer {
 	cust := &storagepb.Customer{
 		Name:    newCust.Name,
 		Labels:  newCust.Labels,
-		Created: ptypes.TimestampNow(),
-		Updated: ptypes.TimestampNow(),
+		Created: timestamppb.Now(),
+		Updated: timestamppb.Now(),
 	}
 
 	if newCust.Description != nil {
@@ -28,29 +28,20 @@ func toStorageCustomer(newCust *customersapi.NewCustomer) *storagepb.Customer {
 	return cust
 }
 
-func fromStorageCustomer(id string, cust *storagepb.Customer) (*customersapi.Customer, error) {
-	created, err := ptypes.Timestamp(cust.Created)
-	if err != nil {
-		return nil, err
-	}
-	updated, err := ptypes.Timestamp(cust.Updated)
-	if err != nil {
-		return nil, err
-	}
-
+func fromStorageCustomer(id string, cust *storagepb.Customer) *customersapi.Customer {
 	resCust := &customersapi.Customer{
 		Id:        id,
 		Name:      cust.Name,
 		Labels:    cust.Labels,
-		CreatedAt: created,
-		UpdatedAt: updated,
+		CreatedAt: cust.Created.AsTime(),
+		UpdatedAt: cust.Updated.AsTime(),
 	}
 
 	if cust.Description != nil {
 		resCust.Description = &cust.Description.Value
 	}
 
-	return resCust, nil
+	return resCust
 }
 
 func toAPICustomersPage(records []stores.Record, nextToken string) (*customersapi.CustomersPage, error) {
@@ -69,7 +60,7 @@ func toAPICustomersPage(records []stores.Record, nextToken string) (*customersap
 			return nil, err
 		}
 
-		cust, err := fromStorageCustomer(record.ID, storedCust)
+		cust := fromStorageCustomer(record.ID, storedCust)
 		if err != nil {
 			return nil, err
 		}

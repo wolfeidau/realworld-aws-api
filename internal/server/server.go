@@ -73,11 +73,7 @@ func (cs *Customers) NewCustomer(c echo.Context) error {
 
 	log.Ctx(ctx).Info().Str("id", id).Int64("v", v).Msg("stored new customer")
 
-	cust, err := fromStorageCustomer(id, storedCust)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("failed to marshal new customer")
-		return c.NoContent(http.StatusInternalServerError)
-	}
+	cust := fromStorageCustomer(id, storedCust)
 
 	return c.JSON(http.StatusCreated, cust)
 }
@@ -97,11 +93,7 @@ func (cs *Customers) GetCustomer(c echo.Context, id string) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	apiCust, err := fromStorageCustomer(id, cust)
-	if err != nil {
-		log.Ctx(ctx).Error().Err(err).Msg("failed to marshal customer")
-		return c.NoContent(http.StatusInternalServerError)
-	}
+	apiCust := fromStorageCustomer(id, cust)
 
 	return c.JSON(http.StatusOK, apiCust)
 }
