@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
 	"github.com/wolfeidau/realworld-aws-api/internal/flags"
 	"github.com/wolfeidau/realworld-aws-api/internal/logger"
 	"github.com/wolfeidau/realworld-aws-api/internal/migrate"
 	storagepb "github.com/wolfeidau/realworld-aws-api/proto/customers/storage/v1beta1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestDDBCustomers(t *testing.T) {
@@ -73,7 +73,7 @@ func newStoreCustomer(name string, labels []string) *storagepb.Customer {
 	return &storagepb.Customer{
 		Name:    name,
 		Labels:  labels,
-		Created: ptypes.TimestampNow(),
-		Updated: ptypes.TimestampNow(),
+		Created: timestamppb.Now(),
+		Updated: timestamppb.Now(),
 	}
 }

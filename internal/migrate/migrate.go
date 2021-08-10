@@ -31,6 +31,33 @@ func EnsureTable(dbSvc dynamodbiface.DynamoDBAPI, tableName string) error {
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{AttributeName: aws.String("id"), AttributeType: aws.String(dynamodb.ScalarAttributeTypeS)},
 			{AttributeName: aws.String("name"), AttributeType: aws.String(dynamodb.ScalarAttributeTypeS)},
+			{AttributeName: aws.String("created"), AttributeType: aws.String(dynamodb.ScalarAttributeTypeS)},
+			{AttributeName: aws.String("pk1"), AttributeType: aws.String(dynamodb.ScalarAttributeTypeS)},
+			{AttributeName: aws.String("sk1"), AttributeType: aws.String(dynamodb.ScalarAttributeTypeS)},
+		},
+		LocalSecondaryIndexes: []*dynamodb.LocalSecondaryIndex{
+			{
+				IndexName: aws.String("idx_created"),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{AttributeName: aws.String("id"), KeyType: aws.String(dynamodb.KeyTypeHash)},
+					{AttributeName: aws.String("created"), KeyType: aws.String(dynamodb.KeyTypeRange)},
+				},
+				Projection: &dynamodb.Projection{ProjectionType: aws.String(dynamodb.ProjectionTypeAll)},
+			},
+		},
+		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String("idx_global_1"),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{AttributeName: aws.String("pk1"), KeyType: aws.String(dynamodb.KeyTypeHash)},
+					{AttributeName: aws.String("sk1"), KeyType: aws.String(dynamodb.KeyTypeRange)},
+				},
+				Projection: &dynamodb.Projection{ProjectionType: aws.String(dynamodb.ProjectionTypeKeysOnly)},
+				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+					ReadCapacityUnits:  aws.Int64(1),
+					WriteCapacityUnits: aws.Int64(1),
+				},
+			},
 		},
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
 			ReadCapacityUnits:  aws.Int64(1),
