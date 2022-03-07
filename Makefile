@@ -34,12 +34,12 @@ clean:
 
 lint:
 	@echo "--- lint all the things"
-	@docker run --rm -v ${WORKDIR}:/app -w /app -it golangci/golangci-lint:$(GOLANGCI_LINT_TAG) golangci-lint run -v ./...
+	@docker run --rm -v ${WORKDIR}:/app -w /app golangci/golangci-lint:$(GOLANGCI_LINT_TAG) golangci-lint run -v ./...
 .PHONY: lint
 
 lint-fix:
 	@echo "--- lint all the things"
-	@docker run --rm -v ${WORKDIR}:/app -w /app -it golangci/golangci-lint:$(GOLANGCI_LINT_TAG) golangci-lint run --fix -v ./...
+	@docker run --rm -v ${WORKDIR}:/app -w /app golangci/golangci-lint:$(GOLANGCI_LINT_TAG) golangci-lint run --fix -v ./...
 .PHONY: lint-fix
 
 test:
