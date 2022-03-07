@@ -17,7 +17,3 @@ jobs:
         uses: actions/checkout@v1
       - name: CI Tasks
         run: make ci
-      # Run Spectral
-      - uses: stoplightio/spectral-action@v0.5.5
-        with:
-          file_glob: 'openapi/*.yaml'
