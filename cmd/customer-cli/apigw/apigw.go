@@ -3,7 +3,7 @@ package apigw
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -25,11 +25,11 @@ func RequestSigner(awscfg *aws.Config) customersapi.RequestEditorFn {
 		body := bytes.NewReader([]byte{})
 
 		if req.Body != nil {
-			d, err := ioutil.ReadAll(req.Body)
+			d, err := io.ReadAll(req.Body)
 			if err != nil {
 				return err
 			}
-			req.Body = ioutil.NopCloser(bytes.NewReader(d))
+			req.Body = io.NopCloser(bytes.NewReader(d))
 
 			body = bytes.NewReader(d)
 		}
