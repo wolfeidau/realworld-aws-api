@@ -1,4 +1,5 @@
 package customersapi
 
-//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen -generate types,server,spec,client -package customersapi -o customersapi.gen.go ../../openapi/customers.yaml
-//go:generate go fmt customersapi.gen.go
+//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=types.cfg.yaml ../../openapi/customers.yaml
+//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=server.cfg.yaml ../../openapi/customers.yaml
+//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=client.cfg.yaml ../../openapi/customers.yaml

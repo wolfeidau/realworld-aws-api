@@ -1,0 +1,4 @@
+package: customersapi
+generate:
+  models: true
+output: customer-types.gen.go
