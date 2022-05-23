@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: 'AWS::Serverless-2016-10-31'
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
 Description: >-
   This template creates API Gateway and Lambda resources for the backend service.
 
@@ -27,7 +27,7 @@ Parameters:
     Type: String
     Description: The stage where the application is running in, e.g., dev, prod.
     Default: "dev"
-  
+
   Branch:
     Type: String
     Default: "master"
@@ -44,8 +44,7 @@ Globals:
         BRANCH: !Ref Branch
 
 Conditions:
-  IsProd:
-    !Equals [!Ref Stage, "prod"]
+  IsProd: !Equals [!Ref Stage, "prod"]
 Resources:
   CustomersTable:
     Type: AWS::DynamoDB::Table
@@ -71,6 +70,8 @@ Resources:
       LocalSecondaryIndexes:
         - IndexName: idx_created
           KeySchema:
+            - AttributeName: id
+              KeyType: HASH
             - AttributeName: created
               KeyType: RANGE
           Projection:
@@ -103,15 +104,15 @@ Resources:
         Type: REGIONAL
       # Use DefinitionBody for swagger file so that we can use CloudFormation intrinsic functions within the swagger file
       DefinitionBody:
-        'Fn::Transform':
-          Name: 'AWS::Include'
+        "Fn::Transform":
+          Name: "AWS::Include"
           Parameters:
-            Location: '../openapi/customers.yaml'
+            Location: "../openapi/customers.yaml"
       StageName: Prod
       TracingEnabled: true # Enable AWS X-Ray to help debug API requests
       MethodSettings:
-        - ResourcePath: '/*'
-          HttpMethod: '*'
+        - ResourcePath: "/*"
+          HttpMethod: "*"
           # Disable data trace in production to avoid logging customer sensitive information from requests and responses
           DataTraceEnabled: !If [IsProd, false, true]
           LoggingLevel: INFO
@@ -119,9 +120,9 @@ Resources:
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
       AccessLogSetting:
-        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
+        DestinationArn: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}"
         Format: '$context.identity.sourceIp $context.authorizer.claims.sub [$context.requestTime] "$context.httpMethod $context.resourcePath $context.protocol" $context.status $context.requestId $context.awsEndpointRequestId $context.xrayTraceId $context.responseLatency $context.integrationLatency "$context.error.message"'
-      OpenApiVersion: '3.0.0'
+      OpenApiVersion: "3.0.0"
       # Cors:
       #   AllowOrigin: "'*'"
       #   AllowHeaders: "'authorization, content-type'"
@@ -149,8 +150,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ApplicationsApi
-            Path: '/*'
-            Method: '*'
+            Path: "/*"
+            Method: "*"
       AutoPublishAlias: live
       DeploymentPreference:
         Enabled: true
@@ -190,10 +191,10 @@ Resources:
 
   # Alarms used in canary deployment for Applications API.
   ApiAvailability:
-    Type: 'AWS::CloudWatch::Alarm'
+    Type: "AWS::CloudWatch::Alarm"
     Properties:
       ActionsEnabled: false
-      AlarmDescription: !Sub 'Api availability is lower than 90%. Only used in canary deployment for Lambda ${ApiLambda}'
+      AlarmDescription: !Sub "Api availability is lower than 90%. Only used in canary deployment for Lambda ${ApiLambda}"
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: ApiName
@@ -206,10 +207,10 @@ Resources:
       Threshold: 0.1
       TreatMissingData: notBreaching
   Api4xxErrors:
-    Type: 'AWS::CloudWatch::Alarm'
+    Type: "AWS::CloudWatch::Alarm"
     Properties:
       ActionsEnabled: false
-      AlarmDescription: !Sub 'Api 4xx Errors are more than 30%. Only used in canary deployment for Lambda ${ApiLambda}'
+      AlarmDescription: !Sub "Api 4xx Errors are more than 30%. Only used in canary deployment for Lambda ${ApiLambda}"
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: ApiName
@@ -222,10 +223,10 @@ Resources:
       Threshold: 0.3
       TreatMissingData: notBreaching
   ApiLatencyP50:
-    Type: 'AWS::CloudWatch::Alarm'
+    Type: "AWS::CloudWatch::Alarm"
     Properties:
       ActionsEnabled: false
-      AlarmDescription: !Sub 'Api latency p50 is too high. Only used in canary deployment for Lambda ${ApiLambda}'
+      AlarmDescription: !Sub "Api latency p50 is too high. Only used in canary deployment for Lambda ${ApiLambda}"
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: ApiName
