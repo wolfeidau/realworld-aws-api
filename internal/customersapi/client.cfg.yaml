@@ -1,0 +1,4 @@
+package: customersapi
+generate:
+  client: true
+output: customer-client.gen.go
