@@ -4,7 +4,7 @@ BRANCH ?= master
 SAR_VERSION ?= 1.0.0
 
 WORKDIR = $(shell pwd)
-GOLANGCI_LINT_TAG = v1.43.0
+GOLANGCI_LINT_TAG = v1.46.2
 
 GIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u '+%Y%m%dT%H%M%S')
@@ -102,10 +102,14 @@ publish:
 
 deploy:
 	@echo "--- deploy stack $(APPNAME)-$(STAGE)-$(BRANCH)"
+	$(eval SAM_BUCKET := $(shell aws ssm get-parameter --name '/config/$(STAGE)/$(BRANCH)/deploy_bucket' --query 'Parameter.Value' --output text))
+
 	@sam deploy \
 		--no-fail-on-empty-changeset \
-		--template-file api.out.yaml \
 		--capabilities CAPABILITY_IAM \
+		--s3-bucket $(SAM_BUCKET) \
+		--s3-prefix sam/$(GIT_HASH) \
+		--template-file sam/api.yaml \
 		--tags "environment=$(STAGE)" "branch=$(BRANCH)" "service=$(APPNAME)" \
 		--stack-name $(APPNAME)-$(STAGE)-$(BRANCH) \
 		--parameter-overrides AppName=$(APPNAME) Stage=$(STAGE) Branch=$(BRANCH)
